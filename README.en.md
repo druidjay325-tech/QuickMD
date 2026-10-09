@@ -1,6 +1,6 @@
 # QuickMD
 
-[简体中文](README.md) · [MIT](LICENSE)
+[简体中文](README.zh-CN.md) · [MIT](LICENSE)
 
 Press Alt+Q to capture a thought. QuickMD 0.6.7 is a local Markdown scratchpad for Windows 10/11 x64, built with Tauri, Rust, React and TypeScript.
 
