@@ -1,0 +1,269 @@
+/* 桌面由 Acrylic 模糊真实背景，CSS 只叠加薄的分区底色。 */
+[data-theme="glass"] {
+  --glass-tint: color-mix(in srgb, var(--accent) 12%, #111b29);
+  --bg-primary: color-mix(
+    in srgb,
+    var(--glass-tint) var(--glass-body-opacity, 22%),
+    transparent
+  );
+  --bg-secondary: color-mix(
+    in srgb,
+    var(--glass-tint) var(--glass-sidebar-opacity, 30%),
+    transparent
+  );
+  --bg-tertiary: #ffffff12;
+  --glass-chrome: color-mix(
+    in srgb,
+    var(--glass-tint) var(--glass-chrome-opacity, 18%),
+    transparent
+  );
+  --glass-control: #ffffff0d;
+  --glass-selected: color-mix(in srgb, var(--accent) 32%, transparent);
+  --glass-popup: color-mix(in srgb, var(--glass-tint) 62%, transparent);
+  --glass-fixed-panel: color-mix(in srgb, var(--glass-tint) 94%, transparent);
+  --text-primary: #fff;
+  --text-secondary: #fff;
+  --text-muted: #fff;
+  --on-accent: #fff !important;
+  --border: #ffffff29;
+  --border-color: var(--border);
+  --search-highlight: #fff;
+  background: transparent;
+}
+
+[data-theme="glass"] body,
+[data-theme="glass"] #root,
+[data-theme="glass"] .main-layout,
+[data-theme="glass"] .main-body {
+  background: transparent;
+}
+[data-theme="glass"] body {
+  isolation: isolate;
+  text-shadow: 0 1px 3px #0009;
+}
+
+/* 白字覆盖语法配色、链接、状态与弹窗；查找镜像必须保持隐形，避免双重文字。 */
+[data-theme="glass"] body,
+[data-theme="glass"] body * {
+  color: #fff !important;
+}
+[data-theme="glass"] input,
+[data-theme="glass"] textarea,
+[data-theme="glass"] button,
+[data-theme="glass"] select {
+  text-shadow: inherit;
+  caret-color: #fff;
+}
+[data-theme="glass"] ::placeholder {
+  color: #fff !important;
+  opacity: 0.72;
+}
+[data-theme="glass"] .code-editor-mirror,
+[data-theme="glass"] .code-editor-mirror * {
+  color: transparent !important;
+  text-shadow: none;
+}
+[data-theme="glass"] .mermaid-render :is(text, tspan) {
+  fill: #fff !important;
+}
+[data-theme="glass"] .mermaid-render .labelBkg {
+  fill: var(--glass-tint) !important;
+  opacity: 0.45;
+}
+[data-theme="glass"] .preview-pane a {
+  text-decoration: underline;
+  text-decoration-color: #ffffff80;
+  text-underline-offset: 3px;
+}
+
+[data-theme="glass"] .sidebar,
+[data-theme="glass"] .main-editor-area,
+[data-theme="glass"] .float-window {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+/* 模糊放在伪元素上，避免改变内部固定定位菜单的坐标系。 */
+[data-theme="glass"] .sidebar::before,
+[data-theme="glass"] .main-editor-area::before,
+[data-theme="glass"] .float-window::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--bg-primary);
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+[data-theme="glass"] .sidebar::before {
+  background: var(--bg-secondary);
+}
+/* 原生材质已负责整窗：不重复叠加随滑块变化的 CSS 底色。 */
+[data-theme="glass"][data-native-glass="true"]
+  :is(.main-editor-area, .float-window)::before {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="glass"][data-native-glass="true"] .sidebar::before {
+  background: color-mix(in srgb, var(--glass-tint) 8%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-theme="glass"][data-native-glass="true"] {
+  --glass-chrome: color-mix(in srgb, var(--glass-tint) 4%, transparent);
+}
+
+[data-theme="glass"]
+  :is(
+    .md-toolbar,
+    .main-statusbar,
+    .float-statusbar,
+    .sidebar-footer,
+    .fr-bar
+  ) {
+  background: var(--glass-chrome);
+}
+/* 无分割线的相邻区域共用下层较浅底色，不再叠加工具栏遮罩。 */
+[data-theme="glass"]
+  :is(.main-editor-toolbar, .float-toolbar, .sidebar-search-row) {
+  background: transparent;
+}
+[data-theme="glass"] .main-statusbar {
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+[data-theme="glass"]
+  :is(
+    .sidebar-search-row input,
+    .modal-input,
+    .input-modal-field,
+    .tag-editor-input,
+    .fr-input,
+    .fr-chip,
+    .float-title-input,
+    .shortcut-picker select,
+    .settings-dir-path,
+    .settings-preview code,
+    .preview-pane code,
+    .preview-pane pre,
+    .preview-pane th,
+    .preview-pane blockquote,
+    .float-watermark code,
+    .float-watermark kbd,
+    .blocked-resource
+  ) {
+  background: var(--glass-control);
+}
+[data-theme="glass"] .preview-pane .code-block-wrapper pre {
+  background: var(--glass-control);
+}
+[data-theme="glass"] .preview-pane pre code {
+  background: transparent;
+}
+[data-theme="glass"] :is(.sidebar-tag, .sidebar-tag-bar-btn, .tag-editor-tag) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+[data-theme="glass"] :is(.sidebar-item:hover, .md-dropdown-item:hover) {
+  background: #ffffff12;
+}
+[data-theme="glass"]
+  :is(
+    .sidebar-item.active,
+    .mode-btn.active,
+    .float-modebar .mode-btn.active,
+    .md-btn:active,
+    .md-btn-dropdown.open > .md-btn,
+    .modal-btn-primary,
+    .input-modal-confirm,
+    .tag-editor-add,
+    .sidebar-tag-filtered,
+    .sidebar-item.active .sidebar-tag-filtered,
+    .sidebar-tag-bar-btn.active,
+    .fr-chip.active,
+    .fr-chip-primary
+  ) {
+  background: var(--glass-selected);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px #ffffff24;
+}
+[data-theme="glass"] .sidebar-item.active .sidebar-tag {
+  background: #ffffff14;
+}
+[data-theme="glass"]
+  :is(.modal-btn-primary, .input-modal-confirm, .tag-editor-add):hover {
+  background: color-mix(in srgb, var(--accent) 44%, transparent);
+}
+
+/* 弹出层比正文稍厚，仍透出背景；按钮与输入框不再铺不透明底色。 */
+[data-theme="glass"]
+  :is(
+    .settings-modal,
+    .modal-card,
+    .input-modal-card,
+    .tag-editor,
+    .ctx-menu,
+    .editor-context-menu,
+    .md-dropdown-menu,
+    .toast
+  ) {
+  background: var(--glass-popup) !important;
+  backdrop-filter: blur(30px) saturate(135%);
+  -webkit-backdrop-filter: blur(30px) saturate(135%);
+  box-shadow:
+    0 12px 40px #0003,
+    inset 0 1px 0 #ffffff1a;
+}
+/* 菜单和设置固定加厚；窗口不透明度滑块不参与此变量。 */
+[data-theme="glass"] :is(.ctx-menu, .md-dropdown-menu, .settings-modal) {
+  background: var(--glass-fixed-panel) !important;
+}
+[data-theme="glass"]
+  :is(
+    .settings-overlay,
+    .input-modal-overlay,
+    .modal-overlay,
+    .tag-editor-overlay
+  ) {
+  background: #08101b1a;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+[data-theme="glass"] .accent-cycle {
+  background: color-mix(in srgb, var(--accent) 60%, transparent) !important;
+}
+[data-theme="glass"] option {
+  background: var(--glass-tint);
+}
+
+/* 浏览器没有桌面背景，此背景只作预览；不会注入原生窗口。 */
+[data-theme="glass"][data-material-unavailable="true"] {
+  --bg-primary: var(--glass-tint);
+  --bg-secondary: var(--glass-tint);
+}
+[data-theme="glass"][data-material-unavailable="true"]
+  :is(.main-layout, .float-window, .main-statusbar, .float-statusbar) {
+  background: var(--glass-tint);
+}
+[data-theme="glass"][data-preview="true"] body::before {
+  content: "";
+  position: fixed;
+  inset: -40px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at 9% 26%,
+      color-mix(in srgb, var(--accent) 45%, #759fae) 0,
+      transparent 58%
+    ),
+    radial-gradient(ellipse at 90% 75%, #8d7999 0, transparent 60%),
+    linear-gradient(135deg, #416078 0, #788b8f 52%, #947b69 100%);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  [data-theme="glass"] {
+    --bg-primary: color-mix(in srgb, var(--glass-tint) 80%, transparent);
+    --bg-secondary: color-mix(in srgb, var(--glass-tint) 85%, transparent);
+  }
+}

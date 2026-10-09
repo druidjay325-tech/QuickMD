@@ -1,0 +1,36 @@
+name: Windows quality and candidate build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.0
+          cache: npm
+      - name: Rust toolchain
+        run: rustup default 1.95.0
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run test:rust
+      - run: npm audit --audit-level=moderate
+      - name: RustSec advisories
+        run: |
+          cargo install cargo-audit --locked --version 0.22.2
+          cargo audit --file src-tauri/Cargo.lock
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: npm run tauri build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quickmd-windows-candidate
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error

@@ -1,0 +1,29 @@
+[package]
+name = "quickmd"
+version = "0.6.7"
+rust-version = "1.89"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-autostart = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tempfile = "3"
+rfd = "0.15"
+tauri-plugin-dialog = "2"
+dirs = "5"
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.62.2"
+windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_System_Com", "Win32_UI_Shell", "Win32_System_LibraryLoader", "Win32_System_Threading"] }
+
+[features]
+default = []
+custom-protocol = ["tauri/custom-protocol"]

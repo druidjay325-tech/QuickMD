@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+dist/
+dist-new/
+
+# Rust build
+target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Scratch / temp
+.scratch/
+*.log
+build_output.txt
+release/
+opensource/
+src-tauri/resources/acrylic/
+# 非 Windows 图标为本地 CLI 衍生产物
+src-tauri/icons/android/
+src-tauri/icons/ios/
+src-tauri/icons/icon.icns

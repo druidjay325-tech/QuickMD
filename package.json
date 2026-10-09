@@ -1,0 +1,52 @@
+{
+  "name": "quickmd",
+  "version": "0.6.7",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "tsc --noEmit",
+    "test:rust": "npm run prepare:acrylic && cargo test --locked --manifest-path src-tauri/Cargo.toml",
+    "notices": "node scripts/generate-notices.cjs",
+    "format": "prettier --write src scripts vite.config.ts vitest.config.ts",
+    "prepare:acrylic": "node scripts/prepare-acrylic.cjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "~2.12.0",
+    "@tauri-apps/plugin-dialog": "~2.8.0",
+    "dompurify": "3.4.16",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "mermaid": "12.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.4",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^24.10.0",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "29.1.1",
+    "prettier": "3.9.9",
+    "typescript": "~5.9.3",
+    "vite": "8.3.3",
+    "vitest": "5.0.3"
+  },
+  "engines": {
+    "node": ">=24.14.0"
+  },
+  "overrides": {
+    "katex": "0.19.0"
+  }
+}

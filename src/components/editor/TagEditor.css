@@ -1,0 +1,124 @@
+/* ── Tag Editor ──────────────────────────────── */
+
+.tag-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 60px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.tag-editor {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 360px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.tag-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.tag-editor-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.tag-editor-close:hover {
+  color: var(--text-primary);
+}
+
+.tag-editor-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  min-height: 28px;
+}
+
+.tag-editor-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.tag-editor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  background: rgba(92, 124, 250, 0.15);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.tag-editor-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.tag-editor-remove:hover {
+  color: #ff4444;
+}
+
+.tag-editor-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tag-editor-input {
+  flex: 1;
+  height: 28px;
+  padding: 0 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.tag-editor-input:focus {
+  border-color: var(--accent);
+}
+
+.tag-editor-input::placeholder {
+  color: var(--text-muted);
+}
+
+.tag-editor-add {
+  height: 28px;
+  padding: 0 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tag-editor-add:hover {
+  background: var(--accent-hover);
+}

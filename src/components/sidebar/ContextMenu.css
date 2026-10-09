@@ -1,0 +1,47 @@
+.ctx-menu {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: ctxFadeIn 0.1s ease;
+}
+
+@keyframes ctxFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ctx-menu-item {
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  user-select: none;
+  outline: none;
+}
+
+.ctx-menu-item:hover,
+.ctx-menu-item:focus {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.ctx-menu-item-danger:hover,
+.ctx-menu-item-danger:focus {
+  background: rgba(220, 38, 38, 0.15);
+  color: #ff6b6b;
+}
+
+.ctx-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}

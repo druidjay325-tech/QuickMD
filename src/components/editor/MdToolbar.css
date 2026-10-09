@@ -1,0 +1,126 @@
+.md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-height: 36px;
+}
+
+.md-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.md-toolbar-spacer {
+  flex: 1;
+}
+
+/* ── Button ──────────────────────────────────── */
+
+.md-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition:
+    background 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.md-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.md-btn:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Active state — cursor is inside this format */
+.md-btn.active {
+  color: var(--accent);
+  position: relative;
+}
+.md-btn.active::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0.12;
+  border-radius: inherit;
+}
+
+/* ── Dropdown ───────────────────────────────── */
+
+.md-btn-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.md-btn-arrow {
+  font-size: 0.6rem;
+  margin-left: -1px;
+  opacity: 0.5;
+  transition: transform 0.15s;
+}
+.md-btn-dropdown.open .md-btn-arrow {
+  transform: rotate(180deg);
+}
+.md-btn-dropdown.open > .md-btn {
+  background: var(--accent);
+  color: #fff;
+}
+.md-btn-dropdown.open > .md-btn .md-btn-arrow {
+  opacity: 1;
+}
+
+.md-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 100;
+}
+
+.md-dropdown-item {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.md-dropdown-item:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Disabled state (preview mode) */
+.toolbar-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}

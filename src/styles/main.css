@@ -1,0 +1,149 @@
+/* === Main Window Layout === */
+
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.main-editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Editor toolbar row ── */
+.main-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 4px 20px;
+  background: var(--bg-primary);
+  flex-shrink: 0;
+  min-height: 36px;
+  flex-wrap: wrap;
+}
+
+.editor-modebar {
+  display: flex;
+  gap: 0;
+  margin-left: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.mode-btn {
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  border-right: 1px solid var(--border-color);
+  line-height: 1.4;
+}
+
+.mode-btn:last-child {
+  border-right: none;
+}
+
+.mode-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Editor body ── */
+.main-editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.main-editor-body > .code-editor {
+  flex: 1;
+  min-width: 0;
+}
+
+.main-editor-body > .preview-pane {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Split mode: use CSS variable for ratio */
+.main-editor-body:has(.editor-split-divider) > .code-editor {
+  flex: 0 0 var(--split-ratio, 50%);
+}
+
+.main-editor-body:has(.editor-split-divider) > .preview-pane {
+  flex: 0 0 calc(100% - var(--split-ratio, 50%) - 6px);
+}
+
+.editor-split-divider {
+  width: 6px;
+  background: transparent;
+  flex-shrink: 0;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.editor-split-divider:hover,
+.editor-split-divider:active {
+  background: var(--accent);
+}
+
+.split-divider-handle {
+  width: 2px;
+  height: 32px;
+  background: transparent;
+  border-radius: 1px;
+  pointer-events: none;
+  transition: background 0.15s;
+}
+
+.editor-split-divider:hover .split-divider-handle,
+.editor-split-divider:active .split-divider-handle {
+  background: #fff;
+}
+
+/* ── Statusbar ── */
+.main-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  padding: 0 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.save-status-label {
+  font-weight: 500;
+}

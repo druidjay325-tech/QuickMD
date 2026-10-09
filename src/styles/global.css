@@ -1,0 +1,320 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --radius: 6px;
+  --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+}
+
+/* ── Dark theme (default) ─────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg-primary: #1a1b1e;
+  --bg-secondary: #25262b;
+  --bg-tertiary: #2c2e33;
+  --text-primary: #c1c2c5;
+  --text-secondary: #909296;
+  --text-muted: #5c5f66;
+  --accent: #5c7cfa;
+  --accent-hover: #748ffc;
+  --border: #373a40;
+  --search-highlight: #ff8c00;
+}
+
+/* ── Light theme ──────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --border: #d1d5db;
+  --border-color: #d1d5db;
+  --search-highlight: #ea580c;
+}
+
+[data-theme="light"] body {
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="light"] .code-editor-textarea {
+  font-weight: 400;
+}
+
+[data-theme="light"] .preview-pane {
+  font-weight: 400;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  user-select: none;
+}
+
+.app-container h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.app-container p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.subtitle {
+  font-size: 1rem !important;
+  color: var(--text-muted) !important;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.shortcuts p {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.shortcuts code {
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  border: 1px solid var(--border);
+}
+
+.test-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.test-btn:hover {
+  background: var(--accent-hover);
+}
+
+.test-btn:active {
+  transform: scale(0.97);
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+.diag-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.diag-btn:hover {
+  background: var(--border);
+}
+
+.diag-output {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  max-width: 500px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+/* ── Shared modal styles ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-btn {
+  height: 28px;
+  padding: 0 14px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.modal-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.modal-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.modal-btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.modal-input {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.modal-input:focus {
+  border-color: var(--accent);
+}
+
+.modal-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Global scrollbar (all windows) ── */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Save status icon (shared by float & main) ── */
+.save-status {
+  display: flex;
+  align-items: center;
+  padding: 1px 3px;
+  border-radius: var(--radius);
+}
+.save-status.saved {
+  color: #69db7c;
+}
+.save-status.saving {
+  color: #ffd43b;
+}
+.save-status.unsaved {
+  color: #ff6b6b;
+}
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: var(--radius);
+  transition: color 0.15s;
+}
+
+.theme-toggle:hover {
+  color: var(--text-primary);
+}
+
+.statusbar-spacer {
+  flex: 1;
+}
+
+/* ── Accent color cycle button ── */
+.accent-cycle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  margin-right: 4px;
+  transition: transform 0.15s;
+}
+
+.accent-cycle:hover {
+  transform: scale(1.2);
+}
