@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useExternalChangeDetector } from "../hooks/useExternalChangeDetector";
 import { useArchiveReceiver } from "../hooks/useArchiveReceiver";
@@ -5,6 +6,7 @@ import { useToFloatSender } from "../hooks/useToFloatSender";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { useNoteOperations } from "../hooks/useNoteOperations";
 import { useFileDrop } from "../hooks/useFileDrop";
+import { useImageInsert } from "../hooks/useImageInsert";
 import { Sidebar, type NoteInfo } from "./sidebar/Sidebar";
 import { TagEditor } from "./editor/TagEditor";
 import CodeEditor from "./editor/CodeEditor";
@@ -12,13 +14,7 @@ import type { CodeEditorHandle } from "./editor/CodeEditor";
 import Preview from "./editor/Preview";
 import MdToolbar from "./editor/MdToolbar";
 import { IconFloat } from "./Icons";
-import {
-  listNotes,
-  loadNote,
-  searchNotes,
-  getSettings,
-  importImage,
-} from "../commands";
+import { listNotes, loadNote, searchNotes, getSettings } from "../commands";
 import { countWords } from "../utils/wordCount";
 import { updateMainWindowTitle } from "../utils/mainWindowTitle";
 import { Toast } from "./Toast";
@@ -33,6 +29,8 @@ import { FindReplaceBar } from "./editor/FindReplaceBar";
 import "../styles/main.css";
 
 function MainWindow() {
+  const locale = useLocale();
+
   const layoutRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +54,7 @@ function MainWindow() {
   // ── Editor state ────────────────────────────────────────────
   const editorRef = useRef<CodeEditorHandle | null>(null);
   const contentRef = useRef("");
+  const contentRevision = useRef(0);
   const isLoadingRef = useRef(false);
   const [content, setContentState] = useState("");
   const [viewMode, setViewMode] = useState<"code" | "preview" | "split">(
@@ -67,6 +66,7 @@ function MainWindow() {
   const scrollSourceRef = useRef<"code" | "preview" | null>(null);
 
   const setContent = useCallback((text: string) => {
+    contentRevision.current++;
     contentRef.current = text; // 同步 ref 到最新，避免 swap/save 读到旧值
     setContentState(text);
     editorRef.current?.setContent(text);
@@ -117,10 +117,11 @@ function MainWindow() {
 
   useEffect(() => {
     updateMainWindowTitle(activeFile);
-  }, [activeFile]);
+  }, [activeFile, locale]);
 
   const handleContentChange = useCallback(
     (newContent: string) => {
+      contentRevision.current++;
       contentRef.current = newContent;
       setContentState(newContent);
       if (!isLoadingRef.current) scheduleSave();
@@ -282,12 +283,12 @@ function MainWindow() {
     const unlisten = listen("quickmd:main-close-requested", async () => {
       if (isDirty()) {
         const result = await openConfirmDialog({
-          title: "当前便利贴有未保存的更改",
-          message: "是否保存后再关闭？",
+          title: tr("ui.thisNoteHasUnsavedChanges"),
+          message: tr("ui.saveBeforeClosing"),
           buttons: [
-            { text: "保存并关闭", value: "save", primary: true },
-            { text: "不保存", value: "discard" },
-            { text: "取消", value: "cancel" },
+            { text: tr("ui.saveAndClose"), value: "save", primary: true },
+            { text: tr("ui.discard"), value: "discard" },
+            { text: tr("ui.cancel"), value: "cancel" },
           ],
         });
         if (result !== "save" && result !== "discard") return;
@@ -306,7 +307,9 @@ function MainWindow() {
     const fn = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        saveNow(true).catch(() => {});
+        waitForImages()
+          .then(() => saveNow(true))
+          .catch(() => {});
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
@@ -353,14 +356,23 @@ function MainWindow() {
     refreshNotes: loadNotes,
   });
 
+  const { insertImages, chooseImages, waitForImages } = useImageInsert({
+    editorRef,
+    getContext: () => `${getCurrentFile()}:${contentRevision.current}`,
+    canInsert: () => !operationBusy && !isLoadingRef.current,
+    isPreview: () => viewMode === "preview",
+    toast,
+  });
   useFileDrop({
     onFileDrop: importNote,
-    onUnsupportedFile: () => toast("仅支持 .md 和 .txt 文件"),
+    onImageDrop: insertImages,
+    onUnsupportedFile: () => toast(tr("images.supportedDrops")),
     onError: toast,
   });
   useWindowLifecycle(
     "main",
     async () => {
+      await waitForImages();
       await waitForOperation();
       if (isDirty()) await saveNow(true);
       else await waitForIdle();
@@ -455,7 +467,7 @@ function MainWindow() {
       isLoadingRef.current = true;
       setContent(newContent);
       isLoadingRef.current = false;
-      toast("检测到外部修改，已自动加载最新内容");
+      toast(tr("ui.externalChangesDetectedLoadedTheLatestContent"));
     },
     [setContent, toast],
   );
@@ -470,22 +482,6 @@ function MainWindow() {
   });
 
   // ── Insert image ───────────────────────────────────────────
-  const handleInsertImage = useCallback(async () => {
-    try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
-      const result = await open({
-        title: "选择图片",
-        filters: [
-          { name: "图片", extensions: ["png", "jpg", "jpeg", "gif", "webp"] },
-        ],
-      });
-      if (!result) return;
-      const relative = await importImage(result as string);
-      editorRef.current?.replaceSelection(`\n![图片](${relative})\n`);
-    } catch (e) {
-      toast("选择图片失败");
-    }
-  }, [toast]);
 
   // ── Render ──────────────────────────────────────────────────
 
@@ -521,7 +517,7 @@ function MainWindow() {
           <div className="main-editor-toolbar" ref={toolbarRef}>
             <MdToolbar
               editorRef={editorRef}
-              onInsertImage={handleInsertImage}
+              onInsertImage={chooseImages}
               disabled={viewMode === "preview" || operationBusy}
             />
             <span style={{ flex: 1 }} />
@@ -530,26 +526,26 @@ function MainWindow() {
                 className={`mode-btn${viewMode === "code" ? " active" : ""}`}
                 onClick={() => setViewMode("code")}
               >
-                编辑
+                {tr("ui.edit")}
               </button>
               <button
                 className={`mode-btn${viewMode === "preview" ? " active" : ""}`}
                 onClick={() => setViewMode("preview")}
               >
-                预览
+                {tr("ui.preview")}
               </button>
               <button
                 className={`mode-btn${viewMode === "split" ? " active" : ""}`}
                 onClick={() => setViewMode("split")}
               >
-                分屏
+                {tr("ui.split")}
               </button>
             </div>
             <div
               className="md-btn"
               role="button"
               tabIndex={0}
-              title="浮窗"
+              title={tr("ui.scratchpad")}
               onClick={handleShowFloat}
             >
               <IconFloat />
@@ -594,7 +590,7 @@ function MainWindow() {
                 readOnly={operationBusy}
                 onChange={handleContentChange}
                 onScroll={viewMode === "split" ? handleCodeScroll : undefined}
-                placeholder="开始写点东西…"
+                placeholder={tr("ui.startWriting")}
                 highlights={showFindReplace ? findHighlights : []}
               />
             )}

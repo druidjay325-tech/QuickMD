@@ -19,6 +19,8 @@ Thumbs.db
 # Env
 .env
 .env.local
+.env.*
+!.env.example
 
 # Scratch / temp
 .scratch/
@@ -31,3 +33,12 @@ src-tauri/resources/acrylic/
 src-tauri/icons/android/
 src-tauri/icons/ios/
 src-tauri/icons/icon.icns
+
+# Local application profiles (never publish runtime notes or settings)
+/flashthoughts/
+/.float-buffer/
+/.recovery/
+/.webview/
+/.runtime/
+/.app.lock
+/.config/

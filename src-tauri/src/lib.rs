@@ -7,13 +7,20 @@ use std::{
 };
 use tauri::{Emitter, Manager};
 mod acrylic;
+mod error;
+mod locale;
 mod recycle;
 mod settings;
 mod storage;
+mod updates;
+#[cfg(debug_assertions)]
+mod validation;
 use settings::ShortcutState;
 use storage::{NoteInfo, Store, Tags};
-#[tauri::command]
-async fn runtime_ready(window: tauri::WebviewWindow) -> Result<(), String> {
+async fn runtime_ready_inner(
+    window: tauri::WebviewWindow,
+    report: Option<serde_json::Value>,
+) -> Result<(), String> {
     if std::env::var("QUICKMD_SMOKE_CHECK").as_deref() != Ok("1")
         || std::env::var("QUICKMD_DATA_DIR").is_err()
     {
@@ -25,7 +32,14 @@ async fn runtime_ready(window: tauri::WebviewWindow) -> Result<(), String> {
         storage::atomic_write(
             &root.join(".runtime").join(format!("{label}.ready")),
             env!("CARGO_PKG_VERSION").as_bytes(),
-        )
+        )?;
+        if let Some(report) = report {
+            storage::atomic_write(
+                &root.join(".runtime").join(format!("ui-{label}.json")),
+                &serde_json::to_vec(&report).map_err(|e| e.to_string())?,
+            )?;
+        }
+        Ok(())
     })
     .await
     .map_err(|e| e.to_string())?
@@ -77,12 +91,10 @@ async fn with_store<T: Send + 'static>(
     .await
     .map_err(|e| e.to_string())?
 }
-#[tauri::command]
-async fn get_flashthoughts_dir_path() -> Result<String, String> {
+async fn get_flashthoughts_dir_path_inner() -> Result<String, String> {
     with_store(|s| Ok(s.notes.to_string_lossy().into())).await
 }
-#[tauri::command]
-async fn save_note(
+async fn save_note_inner(
     file_path: String,
     content: String,
     expected_content: Option<String>,
@@ -93,60 +105,53 @@ async fn save_note(
     })
     .await
 }
-#[tauri::command]
-async fn create_note(file_name: String, content: String) -> Result<String, String> {
+async fn create_note_inner(file_name: String, content: String) -> Result<String, String> {
     with_store(move |s| s.create(&file_name, &content)).await
 }
-#[tauri::command]
-async fn load_note(file_path: String) -> Result<String, String> {
+async fn load_note_inner(file_path: String) -> Result<String, String> {
     with_store(move |s| s.load(&file_path)).await
 }
-#[tauri::command]
-async fn list_notes() -> Result<Vec<NoteInfo>, String> {
+async fn list_notes_inner() -> Result<Vec<NoteInfo>, String> {
     with_store(|s| s.list()).await
 }
-#[tauri::command]
-async fn search_notes(query: String) -> Result<Vec<storage::SearchHit>, String> {
+async fn search_notes_inner(query: String) -> Result<Vec<storage::SearchHit>, String> {
     with_store(move |s| s.search(&query)).await
 }
-#[tauri::command]
-async fn delete_note(file_name: String) -> Result<(), String> {
+async fn delete_note_inner(file_name: String) -> Result<(), String> {
     with_store(move |s| s.delete(&file_name)).await
 }
-#[tauri::command]
-async fn rename_note(old_name: String, new_name: String) -> Result<(), String> {
+async fn rename_note_inner(old_name: String, new_name: String) -> Result<(), String> {
     with_store(move |s| s.rename(&old_name, &new_name)).await
 }
-#[tauri::command]
-async fn get_all_tags() -> Result<Tags, String> {
+async fn get_all_tags_inner() -> Result<Tags, String> {
     with_store(|s| s.tags()).await
 }
-#[tauri::command]
-async fn set_tags(file_name: String, tags: Vec<String>) -> Result<(), String> {
+async fn set_tags_inner(file_name: String, tags: Vec<String>) -> Result<(), String> {
     with_store(move |s| s.set_tags(&file_name, tags)).await
 }
-#[tauri::command]
-async fn inspect_buffer() -> Result<Option<String>, String> {
+async fn inspect_buffer_inner() -> Result<Option<String>, String> {
     with_store(|s| s.buffer()).await
 }
-#[tauri::command]
-async fn save_buffer(content: String, expected_content: Option<String>) -> Result<(), String> {
+async fn save_buffer_inner(
+    content: String,
+    expected_content: Option<String>,
+) -> Result<(), String> {
     with_store(move |s| match expected_content {
         Some(previous) => s.save_buffer_checked(&content, &previous),
         None => s.save_buffer(&content),
     })
     .await
 }
-#[tauri::command]
-async fn clear_buffer() -> Result<(), String> {
+async fn clear_buffer_inner() -> Result<(), String> {
     with_store(|s| s.save_buffer("")).await
 }
-#[tauri::command]
-async fn archive_buffer(title: String) -> Result<String, String> {
+async fn archive_buffer_inner(title: String) -> Result<String, String> {
     with_store(move |s| s.archive(&title)).await
 }
-#[tauri::command]
-async fn replace_buffer(content: String, old_title: String) -> Result<Option<String>, String> {
+async fn replace_buffer_inner(
+    content: String,
+    old_title: String,
+) -> Result<Option<String>, String> {
     with_store(move |s| {
         let previous = s.buffer()?.unwrap_or_default();
         let archive = if previous.trim().is_empty() {
@@ -164,8 +169,10 @@ async fn replace_buffer(content: String, old_title: String) -> Result<Option<Str
     })
     .await
 }
-#[tauri::command]
-async fn set_custom_dir(app: tauri::AppHandle, path: Option<String>) -> Result<String, String> {
+async fn set_custom_dir_inner(
+    app: tauri::AppHandle,
+    path: Option<String>,
+) -> Result<String, String> {
     let (result, names) = with_store(move |store| {
         let mut settings = settings::try_load_settings()?;
         let new = match &path {
@@ -191,8 +198,7 @@ async fn set_custom_dir(app: tauri::AppHandle, path: Option<String>) -> Result<S
     .map_err(|e| e.to_string())?;
     Ok(result)
 }
-#[tauri::command]
-async fn read_file_absolute(path: String) -> Result<String, String> {
+async fn read_file_absolute_inner(path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let p = PathBuf::from(path);
         if !p.is_absolute()
@@ -214,8 +220,7 @@ async fn read_file_absolute(path: String) -> Result<String, String> {
     .await
     .map_err(|e| e.to_string())?
 }
-#[tauri::command]
-async fn resolve_image(app: tauri::AppHandle, path: String) -> Result<String, String> {
+async fn resolve_image_inner(app: tauri::AppHandle, path: String) -> Result<String, String> {
     with_store(move |store| {
         if path.starts_with("\\\\") || path.starts_with("//") {
             return Err("网络共享图片不会自动加载".into());
@@ -249,12 +254,13 @@ async fn resolve_image(app: tauri::AppHandle, path: String) -> Result<String, St
     })
     .await
 }
-#[tauri::command]
-async fn import_image(path: String) -> Result<String, String> {
+async fn import_image_inner(path: String) -> Result<String, String> {
     with_store(move |s| s.import_image(&PathBuf::from(path))).await
 }
-#[tauri::command]
-async fn export_note(content: String, suggested_name: String) -> Result<Option<String>, String> {
+async fn export_note_inner(
+    content: String,
+    suggested_name: String,
+) -> Result<Option<String>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         match rfd::FileDialog::new()
             .set_file_name(&suggested_name)
@@ -271,8 +277,7 @@ async fn export_note(content: String, suggested_name: String) -> Result<Option<S
     .await
     .map_err(|e| e.to_string())?
 }
-#[tauri::command]
-async fn open_in_explorer(file_name: String) -> Result<(), String> {
+async fn open_in_explorer_inner(file_name: String) -> Result<(), String> {
     with_store(move |s| {
         let p = s.path(&file_name)?;
         if !p.exists() {
@@ -287,8 +292,7 @@ async fn open_in_explorer(file_name: String) -> Result<(), String> {
     })
     .await
 }
-#[tauri::command]
-fn open_external_link(app: tauri::AppHandle, url: String) -> Result<(), String> {
+fn open_external_link_inner(app: tauri::AppHandle, url: String) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
     if !url.starts_with("https://") && !url.starts_with("http://") {
         return Err("不支持此链接协议".into());
@@ -297,16 +301,14 @@ fn open_external_link(app: tauri::AppHandle, url: String) -> Result<(), String> 
         .open_url(url, None::<&str>)
         .map_err(|e| e.to_string())
 }
-#[tauri::command]
-fn show_float_window(app: tauri::AppHandle) -> Result<String, String> {
+fn show_float_window_inner(app: tauri::AppHandle) -> Result<String, String> {
     let w = app.get_webview_window("float").ok_or("浮窗未就绪")?;
     w.unminimize().map_err(|e| e.to_string())?;
     w.show().map_err(|e| e.to_string())?;
     w.set_focus().map_err(|e| e.to_string())?;
     Ok("ok".into())
 }
-#[tauri::command]
-async fn set_window_glass(
+async fn set_window_glass_inner(
     window: tauri::WebviewWindow,
     enabled: bool,
     dark: bool,
@@ -362,8 +364,7 @@ fn finish_exit(app: tauri::AppHandle, state: tauri::State<ExitState>) {
     app.exit(0);
 }
 
-#[tauri::command]
-async fn get_window_material(
+async fn get_window_material_inner(
     window: tauri::WebviewWindow,
 ) -> Result<acrylic::MaterialStatus, String> {
     if !matches!(window.label(), "main" | "float") {
@@ -419,7 +420,7 @@ pub fn run() {
         .setup(|app| {
             acrylic::initialize_ui();
             // 单实例锁与数据隔离。启动绝不覆盖已有便利贴或指南。
-            let root = data_root().map_err(std::io::Error::other)?;
+            let root = data_root().map_err(error::startup)?;
             std::fs::create_dir_all(&root)?;
             let lock = std::fs::OpenOptions::new()
                 .create(true)
@@ -431,10 +432,12 @@ pub fn run() {
                 std::io::Error::other("QuickMD 已在运行，请使用全局快捷键或托盘呼出")
             })?;
             app.manage(InstanceLock(lock));
-            settings::try_load_settings().map_err(std::io::Error::other)?;
+            settings::try_load_settings().map_err(error::startup)?;
+            settings::initialize_locale_settings().map_err(error::startup)?;
+            let language = locale::state().map_err(error::startup)?;
             current_store()?
-                .seed_initial_documents()
-                .map_err(std::io::Error::other)?;
+                .seed_initial_documents_in(&language.locale)
+                .map_err(error::startup)?;
 
             use tauri::{
                 menu::{MenuBuilder, MenuItemBuilder},
@@ -444,18 +447,30 @@ pub fn run() {
 
             // --- System tray ---
             let tray_app = app.handle().clone();
-            let show_main = MenuItemBuilder::with_id("show_main", "显示主窗口")
-                .build(&tray_app)
-                .unwrap();
-            let quick_note = MenuItemBuilder::with_id("quick_note", "显示便利贴")
-                .build(&tray_app)
-                .unwrap();
-            let settings_item = MenuItemBuilder::with_id("settings", "设置")
-                .build(&tray_app)
-                .unwrap();
-            let quit = MenuItemBuilder::with_id("quit", "退出 QuickMD")
-                .build(&tray_app)
-                .unwrap();
+            let show_main = MenuItemBuilder::with_id(
+                "show_main",
+                locale::text(&language.locale, "显示主窗口", "Open library"),
+            )
+            .build(&tray_app)
+            .unwrap();
+            let quick_note = MenuItemBuilder::with_id(
+                "quick_note",
+                locale::text(&language.locale, "显示便利贴", "Open scratchpad"),
+            )
+            .build(&tray_app)
+            .unwrap();
+            let settings_item = MenuItemBuilder::with_id(
+                "settings",
+                locale::text(&language.locale, "设置", "Settings"),
+            )
+            .build(&tray_app)
+            .unwrap();
+            let quit = MenuItemBuilder::with_id(
+                "quit",
+                locale::text(&language.locale, "退出 QuickMD", "Quit QuickMD"),
+            )
+            .build(&tray_app)
+            .unwrap();
 
             let menu = MenuBuilder::new(&tray_app)
                 .item(&show_main)
@@ -472,9 +487,22 @@ pub fn run() {
                 .cloned()
                 .expect("Tray icon not found");
 
+            app.manage(locale::LocaleMenus {
+                main: show_main.clone(),
+                float: quick_note.clone(),
+                settings: settings_item.clone(),
+                quit: quit.clone(),
+            });
+            if let Some(window) = app.get_webview_window("main") {
+                window.set_title(locale::title(&language.locale))?;
+            }
+            if let Some(window) = app.get_webview_window("float") {
+                window.set_title(locale::title(&language.locale))?;
+            }
+
             let _tray = TrayIconBuilder::with_id("quickmd-tray")
                 .icon(tray_icon)
-                .tooltip("QuickMD - 闪念便利贴")
+                .tooltip(locale::title(&language.locale))
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show_main" => {
@@ -523,6 +551,9 @@ pub fn run() {
                 })
                 .build(app)
                 .unwrap();
+            locale::refresh_native(app.handle(), &language).map_err(error::startup)?;
+            #[cfg(debug_assertions)]
+            validation::start(app.handle());
 
             // --- Intercept float window close → hide instead ---
             if let Some(float_win) = app.get_webview_window("float") {
@@ -547,7 +578,7 @@ pub fn run() {
             }
 
             // --- Global hotkey (from settings, default Alt+Q) ---
-            let settings_data = settings::try_load_settings().map_err(std::io::Error::other)?;
+            let settings_data = settings::try_load_settings().map_err(error::startup)?;
             let shortcut_str = settings_data.shortcut.clone();
 
             // --- Sync autostart state on launch ---
@@ -586,6 +617,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_note,
             runtime_ready,
+            locale::get_locale,
+            locale::set_locale,
+            updates::check_version_update,
+            updates::open_project_link,
             load_note,
             list_notes,
             search_notes,
@@ -627,4 +662,212 @@ pub fn run() {
                 }
             }
         });
+}
+
+#[tauri::command]
+async fn runtime_ready(
+    window: tauri::WebviewWindow,
+    report: Option<serde_json::Value>,
+) -> Result<(), crate::error::ApiError> {
+    runtime_ready_inner(window, report)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn get_flashthoughts_dir_path() -> Result<String, crate::error::ApiError> {
+    get_flashthoughts_dir_path_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn save_note(
+    file_path: String,
+    content: String,
+    expected_content: Option<String>,
+) -> Result<(), crate::error::ApiError> {
+    save_note_inner(file_path, content, expected_content)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn create_note(file_name: String, content: String) -> Result<String, crate::error::ApiError> {
+    create_note_inner(file_name, content)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn load_note(file_path: String) -> Result<String, crate::error::ApiError> {
+    load_note_inner(file_path)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn list_notes() -> Result<Vec<NoteInfo>, crate::error::ApiError> {
+    list_notes_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn search_notes(query: String) -> Result<Vec<storage::SearchHit>, crate::error::ApiError> {
+    search_notes_inner(query)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn delete_note(file_name: String) -> Result<(), crate::error::ApiError> {
+    delete_note_inner(file_name)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn rename_note(old_name: String, new_name: String) -> Result<(), crate::error::ApiError> {
+    rename_note_inner(old_name, new_name)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn get_all_tags() -> Result<Tags, crate::error::ApiError> {
+    get_all_tags_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn set_tags(file_name: String, tags: Vec<String>) -> Result<(), crate::error::ApiError> {
+    set_tags_inner(file_name, tags)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn inspect_buffer() -> Result<Option<String>, crate::error::ApiError> {
+    inspect_buffer_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn save_buffer(
+    content: String,
+    expected_content: Option<String>,
+) -> Result<(), crate::error::ApiError> {
+    save_buffer_inner(content, expected_content)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn clear_buffer() -> Result<(), crate::error::ApiError> {
+    clear_buffer_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn archive_buffer(title: String) -> Result<String, crate::error::ApiError> {
+    archive_buffer_inner(title)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn replace_buffer(
+    content: String,
+    old_title: String,
+) -> Result<Option<String>, crate::error::ApiError> {
+    replace_buffer_inner(content, old_title)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn set_custom_dir(
+    app: tauri::AppHandle,
+    path: Option<String>,
+) -> Result<String, crate::error::ApiError> {
+    set_custom_dir_inner(app, path)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn read_file_absolute(path: String) -> Result<String, crate::error::ApiError> {
+    read_file_absolute_inner(path)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn resolve_image(
+    app: tauri::AppHandle,
+    path: String,
+) -> Result<String, crate::error::ApiError> {
+    resolve_image_inner(app, path)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn import_image(path: String) -> Result<String, crate::error::ApiError> {
+    import_image_inner(path)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn export_note(
+    content: String,
+    suggested_name: String,
+) -> Result<Option<String>, crate::error::ApiError> {
+    export_note_inner(content, suggested_name)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn open_in_explorer(file_name: String) -> Result<(), crate::error::ApiError> {
+    open_in_explorer_inner(file_name)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+fn open_external_link(app: tauri::AppHandle, url: String) -> Result<(), crate::error::ApiError> {
+    open_external_link_inner(app, url).map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+fn show_float_window(app: tauri::AppHandle) -> Result<String, crate::error::ApiError> {
+    show_float_window_inner(app).map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn set_window_glass(
+    window: tauri::WebviewWindow,
+    enabled: bool,
+    dark: bool,
+    opacity: f32,
+    accent: String,
+) -> Result<acrylic::MaterialStatus, crate::error::ApiError> {
+    set_window_glass_inner(window, enabled, dark, opacity, accent)
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+async fn get_window_material(
+    window: tauri::WebviewWindow,
+) -> Result<acrylic::MaterialStatus, crate::error::ApiError> {
+    get_window_material_inner(window)
+        .await
+        .map_err(crate::error::ApiError::from)
 }

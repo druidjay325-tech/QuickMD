@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import {
   useRef,
   useEffect,
@@ -43,6 +44,7 @@ const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
     }: CodeEditorProps,
     ref,
   ) {
+    useLocale();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const mirrorRef = useRef<HTMLDivElement>(null);
 
@@ -220,7 +222,7 @@ const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
         </div>
         <textarea
           readOnly={readOnly}
-          aria-label="便利贴正文"
+          aria-label={tr("ui.noteContent")}
           ref={textareaRef}
           className="code-editor-textarea"
           placeholder={placeholder}

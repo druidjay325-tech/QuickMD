@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import { useEffect, useRef } from "react";
 import "../sidebar/ContextMenu.css";
 
@@ -20,6 +21,8 @@ function Item({
   onClick: () => void;
   danger?: boolean;
 }) {
+  useLocale();
+
   return (
     <div
       className={`ctx-menu-item${danger ? " ctx-menu-item-danger" : ""}`}
@@ -44,6 +47,8 @@ export function EditorContextMenu({
   onPaste,
   onSelectAll,
 }: EditorContextMenuProps) {
+  const locale = useLocale();
+
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,17 +75,16 @@ export function EditorContextMenu({
   useEffect(() => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    if (r.right > window.innerWidth)
-      ref.current.style.left = `${x - r.width}px`;
-    if (r.bottom > window.innerHeight)
-      ref.current.style.top = `${y - r.height}px`;
-  }, [x, y]);
+    const edge = 8;
+    ref.current.style.left = `${Math.max(edge, Math.min(x, window.innerWidth - r.width - edge))}px`;
+    ref.current.style.top = `${Math.max(edge, Math.min(y, window.innerHeight - r.height - edge))}px`;
+  }, [x, y, locale]);
 
   return (
     <div ref={ref} className="ctx-menu" style={style}>
       {onCut && (
         <Item
-          label="剪切"
+          label={tr("ui.cut")}
           onClick={() => {
             onCut();
             onClose();
@@ -88,7 +92,7 @@ export function EditorContextMenu({
         />
       )}
       <Item
-        label="复制"
+        label={tr("ui.copy")}
         onClick={() => {
           onCopy();
           onClose();
@@ -96,7 +100,7 @@ export function EditorContextMenu({
       />
       {onPaste && (
         <Item
-          label="粘贴"
+          label={tr("ui.paste")}
           onClick={() => {
             onPaste();
             onClose();
@@ -105,7 +109,7 @@ export function EditorContextMenu({
       )}
       <div className="ctx-menu-divider" />
       <Item
-        label="全选"
+        label={tr("ui.selectAll")}
         onClick={() => {
           onSelectAll();
           onClose();

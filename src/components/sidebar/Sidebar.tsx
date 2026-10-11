@@ -1,3 +1,4 @@
+import { tr, useLocale, getLocale } from "../../i18n";
 import { memo, useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { ContextMenu } from "./ContextMenu";
 import { IconPin, IconPlus, IconChevronLeft, IconChevronRight } from "../Icons";
@@ -23,16 +24,17 @@ function formatTime(seconds: number): string {
   const diffMin = Math.floor(diffMs / 60000);
   const diffHour = Math.floor(diffMs / 3600000);
 
-  if (diffMin < 1) return "刚刚";
-  if (diffMin < 60) return `${diffMin} 分钟前`;
-  if (diffHour < 24) return `${diffHour} 小时前`;
-  if (diffHour < 48) return "昨天";
+  if (diffMin < 1) return tr("ui.justNow");
+  if (diffMin < 60) return tr("ui.minAgo", { v0: diffMin });
+  if (diffHour < 24) return tr("ui.hrAgo", { v0: diffHour });
+  if (diffHour < 48) return tr("ui.yesterday");
 
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  if (y === now.getFullYear()) return `${m}-${d}`;
-  return `${y}-${m}-${d}`;
+  return new Intl.DateTimeFormat(getLocale(), {
+    month: "short",
+    day: "numeric",
+    ...(y === now.getFullYear() ? {} : { year: "numeric" }),
+  }).format(date);
 }
 
 interface SidebarProps {
@@ -87,6 +89,8 @@ function SidebarInner({
   collapsed,
   onToggleCollapse,
 }: SidebarProps) {
+  useLocale();
+
   const [ctx, setCtx] = useState<CtxState | null>(null);
 
   const handleContextMenu = useCallback(
@@ -174,7 +178,7 @@ function SidebarInner({
           <button
             className="sidebar-expand-btn"
             onClick={onToggleCollapse}
-            title="展开侧边栏"
+            title={tr("ui.expandSidebar")}
           >
             <IconChevronRight />
           </button>
@@ -188,22 +192,22 @@ function SidebarInner({
       <div className="sidebar-search-row">
         <input
           type="text"
-          placeholder="搜索便利贴..."
+          placeholder={tr("ui.searchNotes")}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
         <button
           className="sidebar-new-btn"
           onClick={onCreate}
-          title="新建便利贴 (Ctrl+N)"
-          aria-label="新建便利贴"
+          title={tr("ui.newNoteCtrlN")}
+          aria-label={tr("ui.newNote")}
         >
           <IconPlus />
         </button>
         <button
           className="sidebar-collapse-btn"
           onClick={onToggleCollapse}
-          title="收起侧边栏"
+          title={tr("ui.collapseSidebar")}
         >
           <IconChevronLeft />
         </button>
@@ -242,16 +246,16 @@ function SidebarInner({
       >
         {searching && (
           <div className="sidebar-search-status" role="status">
-            正在寻找…
+            {tr("ui.searching")}
           </div>
         )}
         {sorted.length === 0 ? (
           <div className="sidebar-empty">
             {searching
-              ? "正在寻找…"
+              ? tr("ui.searching")
               : searchQuery
-                ? "没有找到匹配的便利贴"
-                : "还没有便利贴。写下第一个想法吧。"}
+                ? tr("ui.noMatchingNotes")
+                : tr("ui.noNotesYetCaptureYourFirstThought")}
           </div>
         ) : (
           sorted.map((note) => (

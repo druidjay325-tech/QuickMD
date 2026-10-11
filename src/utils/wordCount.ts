@@ -1,10 +1,11 @@
-/** Pure utility: count words in markdown text (Chinese chars + English words) */
+import { tr } from "../i18n";
+/** Han characters count individually; other scripts use Unicode word tokens. */
 export function countWords(markdown: string): number {
-  const chineseChars = (markdown.match(/[\u4e00-\u9fff]/g) || []).length;
-  const englishWords = markdown
-    .replace(/[\u4e00-\u9fff]/g, "")
-    .split(/\s+/)
-    .filter(Boolean).length;
+  const chineseChars = (markdown.match(/\p{Script=Han}/gu) || []).length;
+  const englishWords =
+    markdown
+      .replace(/\p{Script=Han}/gu, " ")
+      .match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
   return chineseChars + englishWords;
 }
 
@@ -26,7 +27,7 @@ export function getTimestampFileName(): string {
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
   const ss = String(now.getSeconds()).padStart(2, "0");
-  return `闪念-${y}-${m}-${d}-${hh}-${mm}-${ss}.md`;
+  return tr("ui.noteMd", { v0: y, v1: m, v2: d, v3: hh, v4: mm, v5: ss });
 }
 
 /** Generate a unique file name by appending "(2)", "(3)", etc. */

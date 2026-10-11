@@ -1,3 +1,4 @@
+import { useLocale, displayMessage } from "../i18n";
 /**
  * Promise-based confirm dialog — supports custom buttons.
  * Usage: const result = await openConfirmDialog({ title, message, buttons });
@@ -52,6 +53,7 @@ function ConfirmDialogInner({
   buttons,
   onClose,
 }: ConfirmDialogOptions & { onClose: (result: string | null) => void }) {
+  useLocale();
   const primaryRef = useRef<HTMLButtonElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   useModalFocus(cardRef, () => onClose(null));
@@ -66,11 +68,11 @@ function ConfirmDialogInner({
         ref={cardRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={displayMessage(title)}
         className="input-modal-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="input-modal-title">{title}</h3>
+        <h3 className="input-modal-title">{displayMessage(title)}</h3>
         {message && (
           <p
             style={{
@@ -79,7 +81,7 @@ function ConfirmDialogInner({
               margin: "0 0 12px",
             }}
           >
-            {message}
+            {displayMessage(message)}
           </p>
         )}
         <div className="input-modal-actions">
@@ -91,7 +93,7 @@ function ConfirmDialogInner({
               style={btn.danger ? { color: "#ff6b6b" } : undefined}
               onClick={() => onClose(btn.value)}
             >
-              {btn.text}
+              {displayMessage(btn.text)}
             </button>
           ))}
         </div>

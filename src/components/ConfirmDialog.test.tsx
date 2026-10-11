@@ -1,4 +1,11 @@
-import { it, expect } from "vitest";
+import { it, expect, beforeEach, afterEach } from "vitest";
+import i18n from "../i18n";
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+afterEach(async () => {
+  await i18n.changeLanguage("zh-CN");
+});
 import { act, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { openConfirmDialog } from "./ConfirmDialog";

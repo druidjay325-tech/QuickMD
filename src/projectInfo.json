@@ -1,0 +1,34 @@
+{
+  "repository": "https://github.com/druidjay325-tech/QuickMD",
+  "license": "MIT",
+  "author": {
+    "name": "DruidJay",
+    "contacts": [
+      {
+        "label": "Gmail",
+        "value": "druidjay325@gmail.com"
+      },
+      {
+        "label": "163 Email",
+        "value": "jieding79513@163.com"
+      }
+    ]
+  },
+  "support": {
+    "message": {
+      "zh-CN": "如果 QuickMD 为你留住了好点子，欢迎打赏作者一点token钱，助力作者早日灵活就业。支持完全自愿。",
+      "en": ""
+    },
+    "links": [],
+    "qrCodes": [
+      {
+        "label": "微信",
+        "image": "/support/Wechat.png"
+      },
+      {
+        "label": "支付宝",
+        "image": "/support/Alipay.jpg"
+      }
+    ]
+  }
+}

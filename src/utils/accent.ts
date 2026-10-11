@@ -8,8 +8,18 @@ export function onAccent(color: string): string {
   return 1.05 / (l + 0.05) >= 4.5 ? "#ffffff" : "#000000";
 }
 export function applyAccent(accent: string, hover: string) {
+  ({ accent, hover } = migrateAccent(accent, hover));
   if (!/^#[0-9a-f]{6}$/i.test(accent)) return;
   document.documentElement.style.setProperty("--accent", accent);
   document.documentElement.style.setProperty("--accent-hover", hover);
   document.documentElement.style.setProperty("--on-accent", onAccent(accent));
+}
+/** Retire the old pine preset without reviving it from an existing profile. */
+export function migrateAccent(
+  accent: string,
+  hover: string,
+): { accent: string; hover: string } {
+  return accent.toLowerCase() === "#39745a"
+    ? { accent: "#10b981", hover: "#34d399" }
+    : { accent, hover };
 }

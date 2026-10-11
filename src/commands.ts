@@ -4,7 +4,33 @@
  * Every `invoke(...)` in the app goes through this file.
  * 参数与返回值在此统一声明，命令对应关系由构建和集成回归验证。
  */
-import { invoke } from "@tauri-apps/api/core";
+import { invoke as nativeInvoke } from "@tauri-apps/api/core";
+import { normalizeError } from "./errors";
+function invoke<T>(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<T> {
+  return nativeInvoke<T>(command, args).catch((error) => {
+    throw normalizeError(error);
+  });
+}
+export interface VersionCheck {
+  status:
+    | "update-available"
+    | "up-to-date"
+    | "ahead"
+    | "no-release"
+    | "browser-preview";
+  currentVersion: string;
+  latestVersion: string | null;
+  releaseUrl: string | null;
+}
+export function checkVersionUpdate(): Promise<VersionCheck> {
+  return invoke("check_version_update");
+}
+export function openProjectLink(url: string): Promise<void> {
+  return invoke("open_project_link", { url });
+}
 import type { NoteInfo } from "./components/sidebar/Sidebar";
 export interface MaterialStatus {
   engine: string;
@@ -26,8 +52,12 @@ export async function setWindowGlass(
 ): Promise<MaterialStatus> {
   return invoke("set_window_glass", { enabled, dark, opacity, accent });
 }
-export async function reportRuntimeReady(): Promise<void> {
-  return invoke("runtime_ready");
+export async function reportRuntimeReady(report?: {
+  locale: string;
+  title: string;
+  controls: string[];
+}): Promise<void> {
+  return invoke("runtime_ready", { report: report ?? null });
 }
 
 export async function createNote(
@@ -164,6 +194,21 @@ export interface AppSettings {
   shortcut: string;
   custom_dir?: string | null;
   auto_save: boolean;
+  locale?: LanguagePreference;
+}
+
+export type LanguagePreference = "system" | "zh-CN" | "en";
+export interface LocaleState {
+  preference: LanguagePreference;
+  locale: "zh-CN" | "en";
+  revision: number;
+  diagnostics?: boolean;
+}
+export function getLocaleState(): Promise<LocaleState> {
+  return invoke("get_locale");
+}
+export function saveLocale(locale: LanguagePreference): Promise<LocaleState> {
+  return invoke("set_locale", { locale });
 }
 
 /** Get current settings */

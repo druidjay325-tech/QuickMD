@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocale, isValidationProfile } from "./i18n";
 import { reportRuntimeReady } from "./commands";
 import { applyAccent } from "./utils/accent";
 import { listen } from "@tauri-apps/api/event";
@@ -12,9 +13,24 @@ import {
 import { EVENT_ACCENT_CHANGED, type AccentChangedPayload } from "./events";
 
 function App() {
+  const locale = useLocale();
   useEffect(() => {
-    reportRuntimeReady().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      const report = isValidationProfile()
+        ? {
+            locale: document.documentElement.lang,
+            title: document.title,
+            controls: Array.from(
+              document.querySelectorAll(
+                ".md-toolbar [title], .float-toolbar [title], .statusbar [title]",
+              ),
+            ).map((element) => element.getAttribute("title") || ""),
+          }
+        : undefined;
+      reportRuntimeReady(report).catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [locale]);
   const label = getWindowLabel();
 
   // Restore saved accent color on startup + listen for cross-window changes

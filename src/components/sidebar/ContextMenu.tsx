@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import "./ContextMenu.css";
@@ -29,6 +30,8 @@ function Item({
   danger?: boolean;
   title?: string;
 }) {
+  useLocale();
+
   return (
     <div
       className={`ctx-menu-item${danger ? " ctx-menu-item-danger" : ""}`}
@@ -60,6 +63,8 @@ export function ContextMenu({
   onToFloat,
   onManageTags,
 }: ContextMenuProps) {
+  const locale = useLocale();
+
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,23 +92,22 @@ export function ContextMenu({
   useEffect(() => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    if (r.right > window.innerWidth)
-      ref.current.style.left = `${x - r.width}px`;
-    if (r.bottom > window.innerHeight)
-      ref.current.style.top = `${y - r.height}px`;
-  }, [x, y]);
+    const edge = 8;
+    ref.current.style.left = `${Math.max(edge, Math.min(x, window.innerWidth - r.width - edge))}px`;
+    ref.current.style.top = `${Math.max(edge, Math.min(y, window.innerHeight - r.height - edge))}px`;
+  }, [x, y, locale]);
 
   return createPortal(
     <div ref={ref} className="ctx-menu" style={style}>
       <Item
-        label={pinned ? "取消置顶" : "置顶"}
+        label={pinned ? tr("ui.unpin") : tr("ui.pin")}
         onClick={() => {
           onTogglePin(fileName);
           onClose();
         }}
       />
       <Item
-        label="移入浮窗"
+        label={tr("ui.copyToScratchpad")}
         onClick={() => {
           onToFloat(fileName);
           onClose();
@@ -111,7 +115,7 @@ export function ContextMenu({
       />
       {onManageTags && (
         <Item
-          label="添加标签"
+          label={tr("ui.addTags")}
           onClick={() => {
             onManageTags(fileName);
             onClose();
@@ -120,28 +124,28 @@ export function ContextMenu({
       )}
       <div className="ctx-menu-divider" />
       <Item
-        label="重命名"
+        label={tr("ui.rename")}
         onClick={() => {
           onRename(fileName);
           onClose();
         }}
       />
       <Item
-        label="复制内容"
+        label={tr("ui.copyContent")}
         onClick={() => {
           onCopyContent(fileName);
           onClose();
         }}
       />
       <Item
-        label="另存为…"
+        label={tr("ui.saveAs")}
         onClick={() => {
           onExport(fileName);
           onClose();
         }}
       />
       <Item
-        label="在资源管理器中打开"
+        label={tr("ui.showInFileExplorer")}
         onClick={() => {
           onOpenInExplorer(fileName);
           onClose();
@@ -149,8 +153,8 @@ export function ContextMenu({
       />
       <div className="ctx-menu-divider" />
       <Item
-        label="删除"
-        title="移入系统回收站，可在系统回收站中还原"
+        label={tr("ui.delete")}
+        title={tr("ui.moveToTheWindowsRecycleBinYouCanRestore")}
         onClick={() => {
           onDelete(fileName);
           onClose();

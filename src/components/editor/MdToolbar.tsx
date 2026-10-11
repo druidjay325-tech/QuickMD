@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import { memo, useState, useRef, useEffect } from "react";
 import {
   IconBold,
@@ -54,6 +55,8 @@ function Dropdown({
   active?: boolean | string;
   disabled?: boolean;
 }) {
+  useLocale();
+
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open || disabled) return;
@@ -107,6 +110,8 @@ function Btn({
   active?: boolean;
   disabled?: boolean;
 }) {
+  useLocale();
+
   return (
     <div
       className={`md-btn${active ? " active" : ""}${disabled ? " toolbar-disabled" : ""}`}
@@ -135,6 +140,8 @@ function DropdownItem({
   children: React.ReactNode;
   onClick: () => void;
 }) {
+  useLocale();
+
   return (
     <div
       className="md-dropdown-item"
@@ -160,6 +167,8 @@ function MdToolbar({
   onInsertImage,
   disabled = false,
 }: MdToolbarProps) {
+  useLocale();
+
   const [headingOpen, setHeadingOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [codeOpen, setCodeOpen] = useState(false);
@@ -416,9 +425,7 @@ function MdToolbar({
   const table = () => {
     const e = ed();
     if (!e) return;
-    e.replaceSelection(
-      "\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n|     |     |     |\n",
-    );
+    e.replaceSelection("\n" + tr("ui.column1Column2Column3") + "\n");
     e.focus();
   };
 
@@ -426,7 +433,7 @@ function MdToolbar({
     const e = ed();
     if (!e) return;
     const sel = e.getSelection();
-    const linkText = sel.text || "文字";
+    const linkText = sel.text || tr("ui.text");
     const md = `[${linkText}](url)`;
     const beforeLen = sel.start;
     e.replaceSelection(md);
@@ -461,7 +468,7 @@ function MdToolbar({
     <>
       {/* 块级：标题▾ */}
       <Dropdown
-        title="标题"
+        title={tr("ui.heading")}
         icon={<HeadingIcon />}
         open={headingOpen}
         onToggle={() => setHeadingOpen(!headingOpen)}
@@ -470,17 +477,22 @@ function MdToolbar({
       >
         {[1, 2, 3, 4, 5, 6].map((n) => (
           <DropdownItem key={n} onClick={() => heading(n)}>
-            H{n} 标题
+            H{n} {tr("ui.heading")}
           </DropdownItem>
         ))}
       </Dropdown>
 
       {/* 行内：B I S̶ <> */}
-      <Btn title="加粗" onClick={bold} active={fmt.bold} disabled={disabled}>
+      <Btn
+        title={tr("ui.bold")}
+        onClick={bold}
+        active={fmt.bold}
+        disabled={disabled}
+      >
         <IconBold />
       </Btn>
       <Btn
-        title="斜体"
+        title={tr("ui.italic")}
         onClick={italic}
         active={fmt.italic}
         disabled={disabled}
@@ -488,7 +500,7 @@ function MdToolbar({
         <IconItalic />
       </Btn>
       <Btn
-        title="删除线"
+        title={tr("ui.strikethrough")}
         onClick={strike}
         active={fmt.strike}
         disabled={disabled}
@@ -496,7 +508,7 @@ function MdToolbar({
         <IconStrikethrough />
       </Btn>
       <Btn
-        title="行内代码"
+        title={tr("ui.inlineCode")}
         onClick={icode}
         active={fmt.icode}
         disabled={disabled}
@@ -507,41 +519,53 @@ function MdToolbar({
 
       {/* 块级前缀：列表▾ 引用 */}
       <Dropdown
-        title="列表"
+        title={tr("ui.list")}
         icon={<IconList />}
         open={listOpen}
         onToggle={() => setListOpen(!listOpen)}
         active={fmt.list !== "none"}
         disabled={disabled}
       >
-        <DropdownItem onClick={ulist}>无序列表</DropdownItem>
-        <DropdownItem onClick={olist}>有序列表</DropdownItem>
-        <DropdownItem onClick={task}>任务列表</DropdownItem>
+        <DropdownItem onClick={ulist}>{tr("ui.bulletedList")}</DropdownItem>
+        <DropdownItem onClick={olist}>{tr("ui.numberedList")}</DropdownItem>
+        <DropdownItem onClick={task}>{tr("ui.taskList")}</DropdownItem>
       </Dropdown>
-      <Btn title="引用" onClick={quote} active={fmt.quote} disabled={disabled}>
+      <Btn
+        title={tr("ui.quote")}
+        onClick={quote}
+        active={fmt.quote}
+        disabled={disabled}
+      >
         <IconQuote />
       </Btn>
       <Sep />
 
       {/* 插入：链接 图片 代码▾ */}
-      <Btn title="链接" onClick={link} active={fmt.link} disabled={disabled}>
+      <Btn
+        title={tr("ui.link")}
+        onClick={link}
+        active={fmt.link}
+        disabled={disabled}
+      >
         <IconLink />
       </Btn>
       <Btn
-        title="图片"
+        title={tr("ui.image")}
         onClick={onInsertImage ?? (() => {})}
         disabled={disabled}
       >
         <IconImage />
       </Btn>
       <Dropdown
-        title="代码"
+        title={tr("ui.code")}
         icon={<IconCode />}
         open={codeOpen}
         onToggle={() => setCodeOpen(!codeOpen)}
         disabled={disabled}
       >
-        <DropdownItem onClick={() => codeBlock()}>代码块（普通文本）</DropdownItem>
+        <DropdownItem onClick={() => codeBlock()}>
+          {tr("ui.codeBlockPlainText")}
+        </DropdownItem>
         <DropdownItem onClick={() => codeBlock("js")}>JavaScript</DropdownItem>
         <DropdownItem onClick={() => codeBlock("ts")}>TypeScript</DropdownItem>
         <DropdownItem onClick={() => codeBlock("py")}>Python</DropdownItem>
@@ -553,7 +577,7 @@ function MdToolbar({
       <Sep />
 
       <Dropdown
-        title="更多操作"
+        title={tr("ui.moreActions")}
         icon={
           <svg
             width="18"
@@ -577,7 +601,7 @@ function MdToolbar({
             setMoreOpen(false);
           }}
         >
-          <IconTable /> 表格
+          <IconTable /> {tr("ui.table")}
         </DropdownItem>
         <DropdownItem
           onClick={() => {
@@ -585,7 +609,7 @@ function MdToolbar({
             setMoreOpen(false);
           }}
         >
-          <IconHr /> 分割线
+          <IconHr /> {tr("ui.horizontalRule")}
         </DropdownItem>
         <DropdownItem
           onClick={() => {
@@ -594,7 +618,7 @@ function MdToolbar({
             setMoreOpen(false);
           }}
         >
-          <IconUndo /> 撤销
+          <IconUndo /> {tr("ui.undo")}
         </DropdownItem>
         <DropdownItem
           onClick={() => {
@@ -603,7 +627,7 @@ function MdToolbar({
             setMoreOpen(false);
           }}
         >
-          <IconRedo /> 重做
+          <IconRedo /> {tr("ui.redo")}
         </DropdownItem>
       </Dropdown>
     </>

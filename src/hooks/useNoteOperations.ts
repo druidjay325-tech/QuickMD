@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { useCallback, useRef, useState } from "react";
 import {
   loadNote,
@@ -56,12 +57,12 @@ export function useNoteOperations(o: Options) {
     await o.waitForIdle();
     if (!o.isDirty()) return true;
     const result = await openConfirmDialog({
-      title: "保留当前更改？",
-      message: "保存后再继续，或明确放弃本次更改。",
+      title: tr("ui.keepYourChanges"),
+      message: tr("ui.saveToContinueOrExplicitlyDiscardTheseChanges"),
       buttons: [
-        { text: "保存", value: "save", primary: true },
-        { text: "放弃更改", value: "discard" },
-        { text: "取消", value: "cancel" },
+        { text: tr("ui.save"), value: "save", primary: true },
+        { text: tr("ui.discardChanges"), value: "discard" },
+        { text: tr("ui.cancel"), value: "cancel" },
       ],
     });
     if (result !== "save" && result !== "discard") return false;
@@ -87,7 +88,7 @@ export function useNoteOperations(o: Options) {
         previous !== o.contentRef.current ||
         file !== o.activeFileRef.current
       ) {
-        toast("读取期间有新的编辑，当前内容已保留，请再次打开");
+        toast(tr("ui.youEditedWhileTheNoteWasLoadingYourChanges"));
         return;
       }
       apply(name, text);
@@ -95,9 +96,9 @@ export function useNoteOperations(o: Options) {
   const createNote = async () =>
     run(async () => {
       const name = await openInputModal({
-        title: "新建便利贴",
-        label: "名称",
-        placeholder: "给想法起一个名字",
+        title: tr("ui.newNote"),
+        label: tr("ui.name"),
+        placeholder: tr("ui.giveThisThoughtAName"),
       });
       if (!name || !(await prepareToLeave())) return;
       const created = await createStoredNote(
@@ -137,8 +138,8 @@ export function useNoteOperations(o: Options) {
   const handleRename = async (name: string) =>
     run(async () => {
       const value = await openInputModal({
-        title: "重命名便利贴",
-        label: "新名称",
+        title: tr("ui.renameNote"),
+        label: tr("ui.newName"),
         defaultValue: name.replace(/\.md$/, ""),
       });
       if (!value) return;

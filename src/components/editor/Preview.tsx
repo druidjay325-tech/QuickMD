@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { renderMarkdown, sanitizeDiagram } from "../../utils/markdown";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -76,6 +77,8 @@ export default function Preview({
   highlightCaseSensitive,
   highlightCurrentIdx,
 }: PreviewProps) {
+  const locale = useLocale();
+
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [renderedHtml, setRenderedHtml] = useState("");
@@ -152,7 +155,7 @@ export default function Preview({
   useEffect(() => {
     ++renderIdRef.current;
     setRenderedHtml(renderMarkdown(content));
-  }, [content]);
+  }, [content, locale]);
 
   // Apply HTML to DOM and handle code-block post-processing
   useEffect(() => {
@@ -168,13 +171,16 @@ export default function Preview({
           if (generation !== renderIdRef.current || !placeholder.isConnected)
             return;
           const image = document.createElement("img");
-          image.alt = placeholder.textContent?.split(" · ")[0] || "图片";
+          image.alt =
+            placeholder.textContent?.split(" · ")[0] || tr("ui.image");
           image.loading = "lazy";
           image.src = convertFileSrc(path);
           placeholder.replaceWith(image);
         } catch {
           if (placeholder.isConnected)
-            placeholder.textContent = "图片无法加载 · 请检查路径";
+            placeholder.textContent = tr(
+              "ui.imageCouldNotBeLoadedCheckItsPath",
+            );
         }
       },
     );
@@ -314,11 +320,11 @@ export default function Preview({
           e.preventDefault();
           if (!/^https?:\/\//i.test(href)) return;
           const result = await openConfirmDialog({
-            title: "打开外部链接？",
+            title: tr("ui.openExternalLink"),
             message: href,
             buttons: [
-              { text: "打开", value: "open", primary: true },
-              { text: "取消", value: "cancel" },
+              { text: tr("ui.open"), value: "open", primary: true },
+              { text: tr("ui.cancel"), value: "cancel" },
             ],
           });
           if (result === "open") await openExternalLink(href).catch(() => {});

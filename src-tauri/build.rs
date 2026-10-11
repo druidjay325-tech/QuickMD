@@ -24,5 +24,8 @@ fn main() {
     println!("cargo:rerun-if-changed=../dist");
     println!("cargo:rerun-if-changed=../WELCOME_CONTENT.md");
     println!("cargo:rerun-if-changed=../MD_GUIDE_CONTENT.md");
+    println!("cargo:rerun-if-changed=../WELCOME_CONTENT.en.md");
+    println!("cargo:rerun-if-changed=../MD_GUIDE_CONTENT.en.md");
+    println!("cargo:rerun-if-changed=../src/projectInfo.json");
     tauri_build::build()
 }

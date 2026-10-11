@@ -19,7 +19,6 @@
   );
   --glass-control: #ffffff0d;
   --glass-selected: color-mix(in srgb, var(--accent) 32%, transparent);
-  --glass-popup: color-mix(in srgb, var(--glass-tint) 62%, transparent);
   --glass-fixed-panel: color-mix(in srgb, var(--glass-tint) 94%, transparent);
   --text-primary: #fff;
   --text-secondary: #fff;
@@ -208,15 +207,18 @@
     .md-dropdown-menu,
     .toast
   ) {
-  background: var(--glass-popup) !important;
+  background: var(--glass-fixed-panel) !important;
   backdrop-filter: blur(30px) saturate(135%);
   -webkit-backdrop-filter: blur(30px) saturate(135%);
   box-shadow:
     0 12px 40px #0003,
     inset 0 1px 0 #ffffff1a;
 }
-/* 菜单和设置固定加厚；窗口不透明度滑块不参与此变量。 */
-[data-theme="glass"] :is(.ctx-menu, .md-dropdown-menu, .settings-modal) {
+/* 全部对话框与菜单固定加厚；窗口不透明度滑块不参与此变量。 */
+[data-theme="glass"] :is([role="dialog"], .ctx-menu, .md-dropdown-menu) {
+  --bg-primary: var(--glass-fixed-panel);
+  --bg-secondary: var(--glass-control);
+  --bg-tertiary: #ffffff12;
   background: var(--glass-fixed-panel) !important;
 }
 [data-theme="glass"]
@@ -235,6 +237,12 @@
 }
 [data-theme="glass"] option {
   background: var(--glass-tint);
+}
+[data-theme="glass"] :is(.settings-about, .project-panel button) {
+  background: var(--accent) !important;
+}
+[data-theme="glass"] :is(.settings-about, .project-panel button):hover {
+  background: var(--accent-hover) !important;
 }
 
 /* 浏览器没有桌面背景，此背景只作预览；不会注入原生窗口。 */

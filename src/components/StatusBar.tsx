@@ -1,3 +1,4 @@
+import { tr, useLocale, displayMessage } from "../i18n";
 import { useState, useEffect } from "react";
 import { SaveStatusIcon } from "./SaveStatusIcon";
 import { IconSun, IconMoon, IconGear } from "./Icons";
@@ -9,6 +10,7 @@ import {
 } from "./editor/SettingsModal";
 import { listen } from "@tauri-apps/api/event";
 import { EVENT_ACCENT_CHANGED } from "../events";
+import { migrateAccent } from "../utils/accent";
 
 interface StatusBarProps {
   wordCount: number;
@@ -32,9 +34,14 @@ export function StatusBar({
   onOpenSettings,
   showDropHint = true,
 }: StatusBarProps) {
+  useLocale();
+
   const { theme, toggle } = useTheme();
   const nextTheme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
-  const themeActionLabel = `当前为${THEME_LABELS[theme]}主题，点击切换为${THEME_LABELS[nextTheme]}主题`;
+  const themeActionLabel = tr("ui.currentThemeSwitchTo", {
+    v0: THEME_LABELS[theme],
+    v1: THEME_LABELS[nextTheme],
+  });
   const [accent, setAccent] = useState(
     () => getAccentColor()?.accent ?? COLOR_PRESETS[0].accent,
   );
@@ -43,7 +50,7 @@ export function StatusBar({
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     listen<{ accent: string }>(EVENT_ACCENT_CHANGED, (e) => {
-      setAccent(e.payload.accent);
+      setAccent(migrateAccent(e.payload.accent, "").accent);
     }).then((fn) => {
       unlisten = fn;
     });
@@ -61,17 +68,20 @@ export function StatusBar({
 
   return (
     <div className={`statusbar ${className}`}>
-      <span className="float-statusbar-left">
-        {wordCount} 字
+      <span className="float-statusbar-left" title={tr("stats.countHelp")}>
+        {tr("stats.count", { count: wordCount })}
         {showDropHint && (
-          <span className="drop-hint"> · {fileName || "拖入 .md 文件"}</span>
+          <span className="drop-hint">
+            {" "}
+            · {fileName || tr("ui.dropAMdFile")}
+          </span>
         )}
       </span>
       <div className="statusbar-spacer" />
       <button
         className="accent-cycle"
         onClick={cycleAccent}
-        title="切换主题色"
+        title={tr("ui.changeAccentColor")}
         style={{ background: accent }}
       />
       <button
@@ -102,7 +112,11 @@ export function StatusBar({
         </span>
       </button>
       {onOpenSettings && (
-        <button className="theme-toggle" onClick={onOpenSettings} title="设置">
+        <button
+          className="theme-toggle"
+          onClick={onOpenSettings}
+          title={tr("ui.settings")}
+        >
           <IconGear />
         </button>
       )}
@@ -112,8 +126,10 @@ export function StatusBar({
           onClick={saveStatus === "error" ? onRetry : undefined}
           className={`save-status ${saveStatus}`}
           title={
-            saveError ||
-            (saveStatus === "saved" ? "内容已安全保存" : "等待保存")
+            (saveError ? displayMessage(saveError) : "") ||
+            (saveStatus === "saved"
+              ? tr("ui.yourContentIsSaved")
+              : tr("ui.waitingToSave"))
           }
           aria-live="polite"
         >
@@ -123,13 +139,13 @@ export function StatusBar({
           <span>
             {saveStatus === "saved"
               ? !fileName && wordCount === 0
-                ? "准备记录"
-                : "已保存"
+                ? tr("ui.readyToWrite")
+                : tr("ui.saved")
               : saveStatus === "saving"
-                ? "保存中"
+                ? tr("ui.saving")
                 : saveStatus === "error"
-                  ? "保存失败 · 重试"
-                  : "未保存"}
+                  ? tr("ui.saveFailedRetry")
+                  : tr("ui.unsaved")}
           </span>
         </button>
       </span>

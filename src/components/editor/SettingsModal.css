@@ -12,7 +12,7 @@
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 8px;
-  width: 420px;
+  width: min(480px, calc(100vw - 24px));
   max-height: 80vh;
   overflow: hidden;
   display: flex;
@@ -53,6 +53,8 @@
 }
 
 .settings-body {
+  overflow-y: auto;
+  min-height: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -60,9 +62,31 @@
 }
 
 .settings-row {
+  gap: 12px;
+  flex-wrap: wrap;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.settings-language {
+  font-family: inherit;
+  font-size: 0.9rem;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: inherit;
+}
+.settings-language option {
+  font: inherit;
+}
+.settings-about {
+  align-self: flex-start;
+  font-size: 0.9rem;
+}
+.settings-toggle {
+  flex-shrink: 0;
 }
 
 .settings-label {

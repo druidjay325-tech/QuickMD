@@ -1,0 +1,36 @@
+{
+  "dateBeijing": "2026-10-11",
+  "appVersion": "0.7.4",
+  "files": [
+    {
+      "file": "docs/screenshots/readme-windows.zh-CN.png",
+      "width": 1128,
+      "height": 852,
+      "bytes": 100263,
+      "sha256": "4de0d96b94d53afbd0105bf5329962410663314170c88cfddfc376e9327b3618"
+    },
+    {
+      "file": "docs/screenshots/readme-file-proof.png",
+      "width": 1600,
+      "height": 840,
+      "bytes": 120040,
+      "sha256": "f0ecac0286b7461af59bd048364582f41ff9bb1c6e6f17adaa9e0873ff067668"
+    },
+    {
+      "file": "docs/screenshots/social-preview.png",
+      "width": 1280,
+      "height": 640,
+      "bytes": 25457,
+      "sha256": "28d8fa2a4c2acd8b651efb57bc72f668b3c7d079dc8c9ea848fc60558fc2b161"
+    },
+    {
+      "file": "docs/screenshots/social-preview.svg",
+      "width": 1280,
+      "height": 640,
+      "bytes": 2649,
+      "sha256": "e12c3b867f471457f0fa78b4baea1888af8345720ddc6e954607c56373683cc9"
+    }
+  ],
+  "sourceNotes": "Native isolated-demo captures for the product images; file-proof figure arranges two native captures and crops the VS Code view as labeled. Social preview uses editable SVG typography and the existing project icon.",
+  "onlineUploadPerformed": false
+}

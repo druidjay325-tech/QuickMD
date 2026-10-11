@@ -1,3 +1,4 @@
+import { useLocale, displayMessage } from "../i18n";
 import { useEffect } from "react";
 
 interface ToastProps {
@@ -7,6 +8,7 @@ interface ToastProps {
 }
 
 export function Toast({ message, duration = 2500, onDone }: ToastProps) {
+  useLocale();
   useEffect(() => {
     const timer = setTimeout(onDone, duration);
     return () => clearTimeout(timer);
@@ -30,7 +32,7 @@ export function Toast({ message, duration = 2500, onDone }: ToastProps) {
         animation: "toastIn 0.3s ease",
       }}
     >
-      {message}
+      {displayMessage(message)}
     </div>
   );
 }

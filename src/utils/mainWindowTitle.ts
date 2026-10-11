@@ -1,12 +1,12 @@
+import { tr } from "../i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-const DEFAULT_TITLE = "QuickMD - 闪念便利贴";
 let latestRevision = 0;
 let titleUpdate = Promise.resolve();
 
 /** 标题跟随当前文件；原生请求串行执行，避免快速切换时旧标题后到。 */
 export function updateMainWindowTitle(fileName: string | null): void {
-  const title = fileName?.replace(/\.md$/i, "") || DEFAULT_TITLE;
+  const title = fileName?.replace(/\.md$/i, "") || tr("ui.quickmdQuickNotes");
   const revision = ++latestRevision;
   document.title = title;
 

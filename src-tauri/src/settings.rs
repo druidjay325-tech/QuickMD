@@ -4,6 +4,8 @@ use tauri::{Emitter, Manager};
 pub struct ShortcutState(pub Mutex<Option<String>>);
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
+    #[serde(default = "default_locale")]
+    pub locale: String,
     #[serde(default)]
     pub autostart: bool,
     #[serde(default = "default_shortcut")]
@@ -12,6 +14,9 @@ pub struct Settings {
     pub custom_dir: Option<String>,
     #[serde(default = "default_auto_save")]
     pub auto_save: bool,
+}
+fn default_locale() -> String {
+    "system".into()
 }
 fn default_shortcut() -> String {
     "Alt+Q".into()
@@ -22,6 +27,7 @@ fn default_auto_save() -> bool {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            locale: "system".into(),
             autostart: false,
             shortcut: default_shortcut(),
             custom_dir: None,
@@ -51,6 +57,12 @@ pub(crate) fn save_settings_internal(s: &Settings) -> Result<(), String> {
         &serde_json::to_vec_pretty(s).map_err(|e| e.to_string())?,
     )
 }
+pub(crate) fn initialize_locale_settings() -> Result<(), String> {
+    if !settings_path()?.exists() {
+        save_settings_internal(&try_load_settings()?)?;
+    }
+    Ok(())
+}
 pub fn register_shortcut(app: &tauri::AppHandle, key: &str) -> Result<(), String> {
     use tauri_plugin_global_shortcut::GlobalShortcutExt;
     let app_handle = app.clone();
@@ -71,14 +83,12 @@ pub fn register_shortcut(app: &tauri::AppHandle, key: &str) -> Result<(), String
         })
         .map_err(|e| format!("快捷键不可用，原快捷键已保留：{e}"))
 }
-#[tauri::command]
-pub async fn get_settings() -> Result<Settings, String> {
+pub async fn get_settings_inner() -> Result<Settings, String> {
     tauri::async_runtime::spawn_blocking(try_load_settings)
         .await
         .map_err(|e| e.to_string())?
 }
-#[tauri::command]
-pub async fn save_app_settings(
+pub async fn save_app_settings_inner(
     app: tauri::AppHandle,
     autostart: bool,
     shortcut: String,
@@ -137,4 +147,23 @@ pub async fn save_app_settings(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_settings() -> Result<Settings, crate::error::ApiError> {
+    get_settings_inner()
+        .await
+        .map_err(crate::error::ApiError::from)
+}
+
+#[tauri::command]
+pub async fn save_app_settings(
+    app: tauri::AppHandle,
+    autostart: bool,
+    shortcut: String,
+    auto_save: bool,
+) -> Result<(), crate::error::ApiError> {
+    save_app_settings_inner(app, autostart, shortcut, auto_save)
+        .await
+        .map_err(crate::error::ApiError::from)
 }

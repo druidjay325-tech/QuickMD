@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import MarkdownIt from "markdown-it";
 import footnote from "markdown-it-footnote";
 import taskLists from "markdown-it-task-lists";
@@ -18,10 +19,13 @@ const md: MarkdownIt = new MarkdownIt({
 md.renderer.rules.image = (tokens, i) => {
   const token = tokens[i],
     source = token.attrGet("src") || "",
-    alt = token.content || "图片";
+    alt = token.content || tr("ui.image");
   if (/^(?:https?:|\/\/|data:|javascript:)/i.test(source))
-    return `<span class="blocked-resource" title="为保护隐私，远程图片不会自动加载">${md.utils.escapeHtml(alt)} · 外部图片已阻止</span>`;
-  return `<span class="local-image" data-local-image="${md.utils.escapeHtml(source)}">${md.utils.escapeHtml(alt)} · 正在载入图片</span>`;
+    return tr("ui.remoteImageBlocked", { v0: md.utils.escapeHtml(alt) });
+  return tr("ui.loadingImage", {
+    v0: md.utils.escapeHtml(source),
+    v1: md.utils.escapeHtml(alt),
+  });
 };
 export function renderMarkdown(text: string): string {
   return DOMPurify.sanitize(md.render(text), {

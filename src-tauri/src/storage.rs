@@ -15,6 +15,13 @@ const INITIAL_DOCUMENTS: [(&str, &[u8]); 2] = [
         include_bytes!("../../MD_GUIDE_CONTENT.md"),
     ),
 ];
+const ENGLISH_DOCUMENTS: [(&str, &[u8]); 2] = [
+    ("SOUL.md", include_bytes!("../../WELCOME_CONTENT.en.md")),
+    (
+        "Markdown Guide.md",
+        include_bytes!("../../MD_GUIDE_CONTENT.en.md"),
+    ),
+];
 #[derive(Clone)]
 pub struct Store {
     pub notes: PathBuf,
@@ -98,7 +105,11 @@ impl Store {
     pub fn new(notes: PathBuf, root: PathBuf) -> Self {
         Self { notes, root }
     }
+    #[cfg(test)]
     pub fn seed_initial_documents(&self) -> Result<(), String> {
+        self.seed_initial_documents_in("zh-CN")
+    }
+    pub fn seed_initial_documents_in(&self, locale: &str) -> Result<(), String> {
         let marker = self.root.join(".initial-documents-v1.json");
         match fs::symlink_metadata(&marker) {
             Ok(_) => return Ok(()),
@@ -109,7 +120,12 @@ impl Store {
             return Err("初始文档目录必须是绝对路径".into());
         }
         fs::create_dir_all(&self.notes).map_err(|e| e.to_string())?;
-        for (name, content) in INITIAL_DOCUMENTS {
+        let documents = if locale == "en" {
+            ENGLISH_DOCUMENTS
+        } else {
+            INITIAL_DOCUMENTS
+        };
+        for (name, content) in documents {
             valid_name(name)?;
             let destination = self.notes.join(name);
             match fs::symlink_metadata(&destination) {
@@ -462,17 +478,26 @@ impl Store {
         if fs::metadata(path).map_err(|e| e.to_string())?.len() > 16 * 1024 * 1024 {
             return Err("图片超过 16 MB".into());
         }
-        let name = format!(
-            "image-{}.{}",
-            chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0),
-            ext
-        );
-        let relative = format!(".assets/{name}");
-        atomic_write(
-            &self.notes.join(&relative),
-            &fs::read(path).map_err(|e| e.to_string())?,
-        )?;
-        Ok(relative)
+        let assets = self.notes.join(".assets");
+        fs::create_dir_all(&assets).map_err(|e| e.to_string())?;
+        // Exclusive random names also protect rapid batches from clock collisions.
+        let mut image = tempfile::Builder::new()
+            .prefix("image-")
+            .suffix(&format!(".{ext}"))
+            .tempfile_in(&assets)
+            .map_err(|e| e.to_string())?;
+        image
+            .write_all(&fs::read(path).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        image.as_file().sync_all().map_err(|e| e.to_string())?;
+        let name = image
+            .path()
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+        image.keep().map_err(|e| e.to_string())?;
+        Ok(format!(".assets/{name}"))
     }
 }
 
@@ -506,6 +531,23 @@ mod tests {
         assert_eq!(s.tags().unwrap()["SOUL.md"], vec!["custom"]);
         assert!(s.notes.join("Markdown 语法指南.md").exists());
         assert!(!s.notes.join("SOUL-1.md").exists());
+    }
+    #[test]
+    fn english_initialization_keeps_existing_notes_and_never_reseeds_on_language_change() {
+        let (_t, s) = fixture();
+        s.create("SOUL.md", "USER ORIGINAL 中文").unwrap();
+        s.seed_initial_documents_in("en").unwrap();
+        assert_eq!(s.load("SOUL.md").unwrap(), "USER ORIGINAL 中文");
+        assert_eq!(
+            fs::read(s.notes.join("Markdown Guide.md")).unwrap(),
+            ENGLISH_DOCUMENTS[1].1
+        );
+        s.seed_initial_documents_in("zh-CN").unwrap();
+        assert_eq!(s.list().unwrap().len(), 2);
+        assert!(!s.notes.join("Markdown 语法指南.md").exists());
+        fs::remove_file(s.notes.join("Markdown Guide.md")).unwrap();
+        s.seed_initial_documents_in("en").unwrap();
+        assert!(!s.notes.join("Markdown Guide.md").exists());
     }
     #[test]
     #[ignore = "仅用于显式本地规模测量"]
@@ -735,5 +777,35 @@ mod tests {
         s.copy_to(&dest).unwrap();
         assert_eq!(fs::read(dest.join(&relative)).unwrap(), b"isolated image");
         assert_eq!(fs::read(image).unwrap(), b"isolated image");
+    }
+    #[test]
+    fn image_batches_keep_sources_and_use_unique_local_names() {
+        let (t, s) = fixture();
+        let source = t.path().join("original [中文] (1).PNG");
+        fs::write(&source, b"original fixture").unwrap();
+        let paths: Vec<_> = (0..50).map(|_| s.import_image(&source).unwrap()).collect();
+        let unique: std::collections::HashSet<_> = paths.iter().collect();
+        assert_eq!(unique.len(), 50);
+        for path in paths {
+            assert!(path.starts_with(".assets/image-") && path.ends_with(".png"));
+            assert_eq!(fs::read(s.notes.join(path)).unwrap(), b"original fixture");
+        }
+        assert_eq!(fs::read(source).unwrap(), b"original fixture");
+    }
+    #[test]
+    fn rejected_images_leave_no_copied_assets() {
+        let (t, s) = fixture();
+        let unsupported = t.path().join("original.svg");
+        fs::write(&unsupported, b"unsupported").unwrap();
+        assert!(s.import_image(&unsupported).is_err());
+        let large = t.path().join("large.png");
+        fs::File::create(&large)
+            .unwrap()
+            .set_len(16 * 1024 * 1024 + 1)
+            .unwrap();
+        assert!(s.import_image(&large).is_err());
+        assert!(s.import_image(&t.path().join("missing.png")).is_err());
+        assert!(!s.notes.join(".assets").exists());
+        assert_eq!(fs::read(unsupported).unwrap(), b"unsupported");
     }
 }

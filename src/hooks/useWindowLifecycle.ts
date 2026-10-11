@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { useEffect, useRef } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,7 +11,10 @@ export async function flushOtherWindow(label: "main" | "float") {
   try {
     await new Promise<void>(async (resolve, reject) => {
       timer = setTimeout(
-        () => reject(new Error("另一窗口未能完成保存，当前操作已取消")),
+        () =>
+          reject(
+            new Error(tr("ui.theOtherWindowCouldNotFinishSavingThisOperation")),
+          ),
         8000,
       );
       try {
@@ -20,7 +24,11 @@ export async function flushOtherWindow(label: "main" | "float") {
             if (e.payload.id !== id) return;
             e.payload.ok
               ? resolve()
-              : reject(new Error(e.payload.error || "另一窗口保存失败"));
+              : reject(
+                  new Error(
+                    e.payload.error || tr("ui.theOtherWindowCouldNotSave"),
+                  ),
+                );
           },
         );
         await emit("quickmd:flush-request", { id, label });

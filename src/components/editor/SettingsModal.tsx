@@ -1,7 +1,15 @@
+import {
+  tr,
+  useLocale,
+  displayMessage,
+  changeLocale,
+  getLanguagePreference,
+} from "../../i18n";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   getSettings,
   saveAppSettings,
+  type LanguagePreference,
   getFlashthoughtsDirPath,
   setCustomDir as setCustomDirCmd,
 } from "../../commands";
@@ -9,19 +17,19 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { emit } from "@tauri-apps/api/event";
 import { EVENT_ACCENT_CHANGED, EVENT_SETTINGS_CHANGED } from "../../events";
 import "./SettingsModal.css";
-import { applyAccent } from "../../utils/accent";
+import { applyAccent, migrateAccent } from "../../utils/accent";
 import { useModalFocus } from "../useModalFocus";
 import { flushOtherWindow } from "../../hooks/useWindowLifecycle";
 import { useTheme } from "../../hooks/useTheme";
+import AboutProject from "../AboutProject";
 
 /* ── Theme color presets ──────────────────────────────────── */
 
 export const COLOR_PRESETS = [
-  { name: "雾蓝", accent: "#527ac7", hover: "#4268b2" },
-  { name: "松绿", accent: "#39745a", hover: "#2f634c" },
-  { name: "琥珀", accent: "#f59e0b", hover: "#f7b32b" },
-  { name: "翠绿", accent: "#10b981", hover: "#34d399" },
-  { name: "玫红", accent: "#ec4899", hover: "#f472b6" },
+  { name: tr("ui.mistBlue"), accent: "#527ac7", hover: "#4268b2" },
+  { name: tr("ui.amber"), accent: "#f59e0b", hover: "#f7b32b" },
+  { name: tr("ui.emerald"), accent: "#10b981", hover: "#34d399" },
+  { name: tr("ui.rose"), accent: "#ec4899", hover: "#f472b6" },
 ];
 
 const ACCENT_STORAGE_KEY = "quickmd-accent-color";
@@ -30,7 +38,13 @@ export function getAccentColor(): { accent: string; hover: string } | null {
   const raw = localStorage.getItem(ACCENT_STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const value = JSON.parse(raw);
+    if (typeof value?.accent !== "string" || typeof value?.hover !== "string")
+      return null;
+    const migrated = migrateAccent(value.accent, value.hover);
+    if (migrated.accent !== value.accent)
+      localStorage.setItem(ACCENT_STORAGE_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch {
     return null;
   }
@@ -41,6 +55,7 @@ function applyAccentColor(accent: string, hover: string) {
 }
 
 export function saveAccentColor(accent: string, hover: string) {
+  ({ accent, hover } = migrateAccent(accent, hover));
   localStorage.setItem(ACCENT_STORAGE_KEY, JSON.stringify({ accent, hover }));
   applyAccentColor(accent, hover);
   // Broadcast to all windows (float window is a separate WebView)
@@ -81,9 +96,12 @@ export default function SettingsModal({
   onClose: () => void;
   beforeDirectoryChange?: () => Promise<void>;
 }) {
+  useLocale();
+
   const card = useRef<HTMLDivElement>(null);
   const { glassOpacity, setGlassOpacity, materialError } = useTheme();
   const [error, setError] = useState("");
+  const [showAbout, setShowAbout] = useState(false);
   const [settings, setSettings] = useState<NativeSettings | null>(null);
   const desired = useRef<NativeSettings | null>(null);
   const confirmed = useRef<NativeSettings | null>(null);
@@ -92,6 +110,8 @@ export default function SettingsModal({
   const saveError = useRef<string | null>(null);
   const mounted = useRef(false);
   const [saving, setSaving] = useState(false);
+  const [savingLanguage, setSavingLanguage] = useState(false);
+  const languageQueue = useRef<Promise<void>>(Promise.resolve());
   const [currentDir, setCurrentDir] = useState("");
   const [customDir, setCustomDirPath] = useState<string | null>(null);
   const { mod1, mod2, key } = parseShortcut(settings?.shortcut ?? "Alt+Q");
@@ -100,10 +120,15 @@ export default function SettingsModal({
   const closeSettings = useCallback(async () => {
     const previousError = saveError.current;
     let pending: Promise<void>;
+    let languagePending: Promise<void>;
     do {
       pending = saveQueue.current;
-      await pending;
-    } while (pending !== saveQueue.current);
+      languagePending = languageQueue.current;
+      await Promise.all([pending, languagePending]);
+    } while (
+      pending !== saveQueue.current ||
+      languagePending !== languageQueue.current
+    );
     // 关闭时若刚发生保存失败，先保留面板展示错误；再次关闭可离开。
     if (saveError.current && saveError.current !== previousError) return;
     onClose();
@@ -176,7 +201,10 @@ export default function SettingsModal({
         } catch (e) {
           if (request === revision.current) {
             desired.current = confirmed.current;
-            saveError.current = `设置保存失败，已恢复之前的选项：${String(e)}`;
+            saveError.current = tr(
+              "ui.settingsCouldNotBeSavedPreviousValuesRestored",
+              { v0: String(e) },
+            );
             if (mounted.current) {
               setSettings(confirmed.current);
               setError(saveError.current);
@@ -197,199 +225,251 @@ export default function SettingsModal({
   };
 
   return (
-    <div className="settings-overlay" onClick={closeSettings}>
-      <div
-        ref={card}
-        role="dialog"
-        aria-modal="true"
-        aria-busy={saving}
-        aria-label="设置"
-        className="settings-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="settings-header">
-          <h2>设置</h2>
-          <button
-            className="settings-close"
-            onClick={closeSettings}
-            aria-label="关闭"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="settings-body">
-          {/* Autostart */}
-          <div className="settings-row">
-            <label className="settings-label">开机自启动</label>
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                aria-label="开机自启动"
-                checked={autostart}
-                disabled={!settings}
-                onChange={(e) =>
-                  updateSettings({ autostart: e.target.checked })
-                }
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
-          {/* Auto-save */}
-          <div className="settings-row">
-            <label className="settings-label">自动保存</label>
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                aria-label="自动保存"
-                checked={autoSave}
-                disabled={!settings}
-                onChange={(e) =>
-                  updateSettings({ auto_save: e.target.checked })
-                }
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-          {!autoSave && (
-            <div className="settings-preview">
-              关闭后可用 <code>Ctrl+S</code> 手动保存
-            </div>
-          )}
-
-          {/* Shortcut */}
-          <div className="settings-row">
-            <label className="settings-label">全局快捷键</label>
-            <div className="shortcut-picker">
-              <select
-                aria-label="快捷键首修饰键"
-                disabled={!settings}
-                value={mod1}
-                onChange={(e) => changeShortcut("mod1", e.target.value)}
-              >
-                {MODIFIERS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <span className="shortcut-plus">+</span>
-              <select
-                aria-label="快捷键第二修饰键"
-                disabled={!settings}
-                value={mod2}
-                onChange={(e) => changeShortcut("mod2", e.target.value)}
-              >
-                {availableMod2.map((m) => (
-                  <option key={m} value={m}>
-                    {m === "None" ? "无" : m}
-                  </option>
-                ))}
-              </select>
-              <span className="shortcut-plus">+</span>
-              <select
-                aria-label="快捷键按键"
-                disabled={!settings}
-                value={key}
-                onChange={(e) => changeShortcut("key", e.target.value)}
-              >
-                {KEYS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="settings-preview">
-            当前快捷键：<code>{currentShortcut}</code>
-          </div>
-
-          <div className="settings-opacity">
-            <div className="settings-row">
-              <label className="settings-label" htmlFor="glass-opacity">
-                毛玻璃不透明度
-              </label>
-              <output htmlFor="glass-opacity">{glassOpacity}%</output>
-            </div>
-            <input
-              id="glass-opacity"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={glassOpacity}
-              onChange={(e) => setGlassOpacity(Number(e.target.value))}
-            />
-            <p className="settings-preview">
-              联动调节实际材质的染色层与亮度层；菜单和设置页保持固定不透明度。
-            </p>
-            {materialError && (
-              <p className="settings-error" role="alert">
-                {materialError}
-              </p>
-            )}
-          </div>
-
-          {/* Flashthoughts directory */}
-          <div className="settings-row settings-row-top">
-            <label className="settings-label">便利贴存档位置</label>
+    <>
+      <div className="settings-overlay" onClick={closeSettings}>
+        <div
+          ref={card}
+          role="dialog"
+          aria-modal="true"
+          aria-busy={saving || savingLanguage}
+          aria-label={tr("ui.settings")}
+          className="settings-modal"
+          {...(showAbout ? { inert: "" } : {})}
+          aria-hidden={showAbout || undefined}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="settings-header">
+            <h2>{tr("ui.settings")}</h2>
             <button
-              className="settings-btn settings-btn-idle"
-              onClick={async () => {
-                try {
-                  const selected = await open({
-                    directory: true,
-                    multiple: false,
-                  });
-                  if (selected && typeof selected === "string") {
-                    await beforeDirectoryChange?.();
-                    await flushOtherWindow("float");
-                    const newPath = await setCustomDirCmd(selected);
-                    setCurrentDir(newPath);
-                    setCustomDirPath(selected);
-                  }
-                } catch (e) {
-                  setError(String(e));
-                }
-              }}
+              className="settings-close"
+              onClick={closeSettings}
+              aria-label={tr("ui.close")}
             >
-              更改
+              ✕
             </button>
           </div>
-          <div className="settings-dir-display">
-            <code className="settings-dir-path">{currentDir}</code>
-          </div>
-          {customDir && (
-            <div className="settings-dir-actions">
+
+          <div className="settings-body">
+            <div className="settings-row settings-language-row">
+              <label className="settings-label" htmlFor="interface-language">
+                {tr("settings.language")}
+              </label>
+              <select
+                id="interface-language"
+                className="settings-language"
+                value={getLanguagePreference()}
+                disabled={savingLanguage}
+                onChange={(event) => {
+                  const language = event.target.value as LanguagePreference;
+                  setSavingLanguage(true);
+                  setError("");
+                  languageQueue.current = languageQueue.current
+                    .catch(() => {})
+                    .then(() => changeLocale(language))
+                    .catch((error) => {
+                      saveError.current = String(error);
+                      setError(saveError.current);
+                    })
+                    .finally(() => setSavingLanguage(false));
+                }}
+              >
+                <option value="system">{tr("settings.followSystem")}</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <p className="settings-preview">{tr("settings.languageHelp")}</p>
+            {/* Autostart */}
+            <div className="settings-row">
+              <label className="settings-label">
+                {tr("ui.launchAtSignIn")}
+              </label>
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  aria-label={tr("ui.launchAtSignIn")}
+                  checked={autostart}
+                  disabled={!settings}
+                  onChange={(e) =>
+                    updateSettings({ autostart: e.target.checked })
+                  }
+                />
+                <span className="toggle-slider" />
+              </label>
+            </div>
+
+            {/* Auto-save */}
+            <div className="settings-row">
+              <label className="settings-label">{tr("ui.autosave")}</label>
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  aria-label={tr("ui.autosave")}
+                  checked={autoSave}
+                  disabled={!settings}
+                  onChange={(e) =>
+                    updateSettings({ auto_save: e.target.checked })
+                  }
+                />
+                <span className="toggle-slider" />
+              </label>
+            </div>
+            {!autoSave && (
+              <div className="settings-preview">
+                {tr("settings.saveManuallyHint", { shortcut: "Ctrl+S" })}
+              </div>
+            )}
+
+            {/* Shortcut */}
+            <div className="settings-row">
+              <label className="settings-label">
+                {tr("ui.globalShortcut")}
+              </label>
+              <div className="shortcut-picker">
+                <select
+                  aria-label={tr("ui.firstShortcutModifier")}
+                  disabled={!settings}
+                  value={mod1}
+                  onChange={(e) => changeShortcut("mod1", e.target.value)}
+                >
+                  {MODIFIERS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <span className="shortcut-plus">+</span>
+                <select
+                  aria-label={tr("ui.secondShortcutModifier")}
+                  disabled={!settings}
+                  value={mod2}
+                  onChange={(e) => changeShortcut("mod2", e.target.value)}
+                >
+                  {availableMod2.map((m) => (
+                    <option key={m} value={m}>
+                      {m === "None" ? tr("ui.none") : m}
+                    </option>
+                  ))}
+                </select>
+                <span className="shortcut-plus">+</span>
+                <select
+                  aria-label={tr("ui.shortcutKey")}
+                  disabled={!settings}
+                  value={key}
+                  onChange={(e) => changeShortcut("key", e.target.value)}
+                >
+                  {KEYS.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="settings-preview">
+              {tr("ui.currentShortcut")}
+              <code>{currentShortcut}</code>
+            </div>
+
+            <div className="settings-opacity">
+              <div className="settings-row">
+                <label className="settings-label" htmlFor="glass-opacity">
+                  {tr("ui.glassOpacity")}
+                </label>
+                <output htmlFor="glass-opacity">{glassOpacity}%</output>
+              </div>
+              <input
+                id="glass-opacity"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={glassOpacity}
+                onChange={(e) => setGlassOpacity(Number(e.target.value))}
+              />
+              <p className="settings-preview">
+                {tr("ui.adjustsBothTintAndLuminosityLayersMenusAndSettings")}
+              </p>
+              {materialError && (
+                <p className="settings-error" role="alert">
+                  {displayMessage(materialError)}
+                </p>
+              )}
+            </div>
+
+            {/* Flashthoughts directory */}
+            <div className="settings-row settings-row-top">
+              <label className="settings-label">
+                {tr("ui.archiveLocation")}
+              </label>
               <button
                 className="settings-btn settings-btn-idle"
                 onClick={async () => {
                   try {
-                    await beforeDirectoryChange?.();
-                    await flushOtherWindow("float");
-                    const newPath = await setCustomDirCmd(null);
-                    setCurrentDir(newPath);
-                    setCustomDirPath(null);
+                    const selected = await open({
+                      directory: true,
+                      multiple: false,
+                    });
+                    if (selected && typeof selected === "string") {
+                      await beforeDirectoryChange?.();
+                      await flushOtherWindow("float");
+                      const newPath = await setCustomDirCmd(selected);
+                      setCurrentDir(newPath);
+                      setCustomDirPath(selected);
+                    }
                   } catch (e) {
                     setError(String(e));
                   }
                 }}
               >
-                恢复默认
+                {tr("ui.change")}
               </button>
             </div>
+            <div className="settings-dir-display">
+              <code className="settings-dir-path">
+                {document.documentElement.dataset.preview === "true"
+                  ? tr("ui.browserPreviewNoAccessToLocalNotes")
+                  : currentDir}
+              </code>
+            </div>
+            {customDir && (
+              <div className="settings-dir-actions">
+                <button
+                  className="settings-btn settings-btn-idle"
+                  onClick={async () => {
+                    try {
+                      await beforeDirectoryChange?.();
+                      await flushOtherWindow("float");
+                      const newPath = await setCustomDirCmd(null);
+                      setCurrentDir(newPath);
+                      setCustomDirPath(null);
+                    } catch (e) {
+                      setError(String(e));
+                    }
+                  }}
+                >
+                  {tr("ui.restoreDefault")}
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="settings-btn settings-about"
+              onClick={() => setShowAbout(true)}
+            >
+              {tr("about.title")}
+            </button>
+          </div>
+
+          {error && (
+            <p className="settings-error" role="alert">
+              {displayMessage(error)}
+            </p>
           )}
         </div>
-
-        {error && (
-          <p className="settings-error" role="alert">
-            {error}
-          </p>
-        )}
       </div>
-    </div>
+      {showAbout && <AboutProject onClose={() => setShowAbout(false)} />}
+    </>
   );
 }

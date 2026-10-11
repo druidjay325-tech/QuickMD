@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { useEffect, useRef } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { replaceBuffer } from "../commands";
@@ -26,11 +27,11 @@ export function useToFloatReceiver(options: Options) {
     let busy = false;
     listen<ToFloatPayload>(EVENT_TO_FLOAT, async (e) => {
       if (busy || current.current.isBusy()) {
-        current.current.onError?.("浮窗正在处理，请稍后重试");
+        current.current.onError?.(tr("ui.theScratchpadIsBusyTryAgainShortly"));
         await emit("quickmd:transfer-complete", {
           requestId: e.payload.requestId,
           ok: false,
-          error: "浮窗正在处理，请稍后重试",
+          error: tr("ui.theScratchpadIsBusyTryAgainShortly"),
         });
         return;
       }
@@ -46,11 +47,11 @@ export function useToFloatReceiver(options: Options) {
         );
         if (previous !== o.getContent()) {
           await o.saveNow();
-          o.onError?.("接收期间有新的编辑，当前草稿已保留；请再次移入");
+          o.onError?.(tr("ui.youEditedDuringTransferYourDraftIsSafeCopy"));
           await emit("quickmd:transfer-complete", {
             requestId: e.payload.requestId,
             ok: false,
-            error: "接收期间有新的编辑，请再次移入",
+            error: tr("ui.youEditedDuringTransferCopyTheNoteAgain"),
           });
           return;
         }

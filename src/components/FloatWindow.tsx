@@ -1,3 +1,4 @@
+import { tr, useLocale, displayMessage } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -5,6 +6,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { useExternalChangeDetector } from "../hooks/useExternalChangeDetector";
 import { useFileDrop } from "../hooks/useFileDrop";
+import { useImageInsert } from "../hooks/useImageInsert";
 import { useToFloatReceiver } from "../hooks/useToFloatReceiver";
 import {
   inspectBuffer,
@@ -31,7 +33,7 @@ import { StatusBar } from "./StatusBar";
 import { Toast } from "./Toast";
 import "../styles/float.css";
 
-const DEFAULT_TITLE = "闪念";
+const defaultTitle = () => tr("ui.quickNote");
 const INVALID_CHARS = /[\\/:*?"<>|]/g;
 
 function sanitizeTitle(title: string): string {
@@ -41,12 +43,12 @@ function sanitizeTitle(title: string): string {
 // ── Watermark ─────────────────────────────────────────────────────────────
 
 const WATERMARK_QUOTES = [
-  "想到什么就写下来，不必急着让它完美。",
-  "好记性不如烂笔头。",
-  "想法转瞬即逝，先抓住它。",
-  "每一条便利贴，都是一颗种子。",
-  "先记下来，一个一个实现。",
-  "这里很安静，写什么都行。",
+  tr("ui.writeItDownItDoesNotNeedToBe"),
+  tr("ui.aShortNoteCanSaveAGoodIdea"),
+  tr("ui.ideasPassQuicklyCatchThisOne"),
+  tr("ui.everyNoteIsASeed"),
+  tr("ui.captureItNowBringItToLifeLater"),
+  tr("ui.aQuietPlaceForWhateverIsOnYourMind"),
 ];
 
 type WmKind = "tutorial" | "greeting" | "quote";
@@ -80,12 +82,12 @@ function pickWatermark(): { kind: WmKind; text: string } {
   if (h >= 5 && h < 10 && !s.morning) {
     s.morning = true;
     save();
-    return { kind: "greeting", text: "早安，今天想记点什么？" };
+    return { kind: "greeting", text: tr("ui.goodMorningWhatIsOnYourMind") };
   }
   if ((h >= 17 || h < 5) && !s.evening) {
     s.evening = true;
     save();
-    return { kind: "greeting", text: "夜深了，别错过每一个奇思妙想" };
+    return { kind: "greeting", text: tr("ui.aQuietNightForANewIdea") };
   }
 
   const pool = WATERMARK_QUOTES.filter((q) => q !== s.last);
@@ -110,8 +112,11 @@ async function wakeWindow(label: string) {
 }
 
 function FloatWindow() {
+  const locale = useLocale();
+
   const editorRef = useRef<CodeEditorHandle | null>(null);
   const contentRef = useRef("");
+  const contentRevision = useRef(0);
   const isLoadingRef = useRef(false);
   const [transaction, setTransaction] = useState(false);
   const transactionRef = useRef(false);
@@ -131,15 +136,27 @@ function FloatWindow() {
   const [content, setContentState] = useState("");
 
   // ── Title (editable) ───────────────────────────────────────
+  const titleIsAutomatic = useRef(
+    localStorage.getItem("quickmd-buffer-title-kind") === "automatic" ||
+      !localStorage.getItem("quickmd-buffer-title"),
+  );
   const [displayTitle, setDisplayTitle] = useState(
-    () => localStorage.getItem("quickmd-buffer-title") || DEFAULT_TITLE,
+    () => localStorage.getItem("quickmd-buffer-title") || defaultTitle(),
   );
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   useEffect(() => {
     localStorage.setItem("quickmd-buffer-title", displayTitle);
+    localStorage.setItem(
+      "quickmd-buffer-title-kind",
+      titleIsAutomatic.current ? "automatic" : "custom",
+    );
   }, [displayTitle]);
+  useEffect(() => {
+    if (titleIsAutomatic.current && !isEditingTitle)
+      setDisplayTitle(defaultTitle());
+  }, [locale, isEditingTitle]);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const titleBackupRef = useRef(DEFAULT_TITLE);
+  const titleBackupRef = useRef(defaultTitle());
 
   // ── View mode (编辑 / 预览) ────────────────────────────────
   const [viewMode, setViewMode] = useState<"code" | "preview">("code");
@@ -152,14 +169,21 @@ function FloatWindow() {
 
   // ── Auto-save settings ─────────────────────────────────────
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [currentShortcut, setCurrentShortcut] = useState("Alt+Q");
 
   useEffect(() => {
     getSettings()
-      .then((s) => setAutoSaveEnabled(s.auto_save))
+      .then((s) => {
+        setAutoSaveEnabled(s.auto_save);
+        setCurrentShortcut(s.shortcut);
+      })
       .catch(() => {});
     const unlisten = listen(EVENT_SETTINGS_CHANGED, () => {
       getSettings()
-        .then((s) => setAutoSaveEnabled(s.auto_save))
+        .then((s) => {
+          setAutoSaveEnabled(s.auto_save);
+          setCurrentShortcut(s.shortcut);
+        })
         .catch(() => {});
     });
     return () => {
@@ -192,6 +216,7 @@ function FloatWindow() {
   // ── Auto-save on change ────────────────────────────────────
   const handleContentChange = useCallback(
     (newContent: string) => {
+      contentRevision.current++;
       contentRef.current = newContent;
       setContentState(newContent);
       if (!isLoadingRef.current) scheduleSave();
@@ -209,6 +234,7 @@ function FloatWindow() {
     try {
       const buffered = await inspectBuffer();
       if (request !== restoreRequest.current) return;
+      contentRevision.current++;
       contentRef.current = buffered || "";
       isLoadingRef.current = true;
       setContentState(buffered || "");
@@ -228,11 +254,25 @@ function FloatWindow() {
     };
   }, [restoreDraft]);
 
-  // ── File drop ──────────────────────────────────────────────
+  // ── Toast / images / file drop ─────────────────────────────
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastKey, setToastKey] = useState(0);
+  const toast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setToastKey((k) => k + 1);
+  }, []);
+  const { insertImages, waitForImages } = useImageInsert({
+    editorRef,
+    getContext: () => contentRevision.current,
+    canInsert: () => !transactionRef.current && !restoring && !restoreError,
+    isPreview: () => viewMode === "preview",
+    toast,
+  });
   useFileDrop({
+    onImageDrop: insertImages,
     onFileDrop: async (droppedContent, fileName) => {
       if (transactionRef.current || restoring || restoreError) {
-        toast("浮窗正在处理，请稍后拖入");
+        toast(tr("ui.theScratchpadIsBusyTryDroppingTheFileAgain"));
         return;
       }
       setBusy(true);
@@ -245,37 +285,31 @@ function FloatWindow() {
         );
         if (previous !== contentRef.current) {
           await saveNow(true);
-          toast("导入期间有新的编辑，草稿已保留，请再次拖入");
+          toast(tr("ui.youEditedTheDraftDuringImportYourChangesAre"));
           return;
         }
         if (archived)
           await emit(EVENT_ARCHIVE_REQUEST, { archivedFileName: archived });
+        contentRevision.current++;
         contentRef.current = droppedContent;
         isLoadingRef.current = true;
         setContentState(droppedContent);
+        titleIsAutomatic.current = false;
         setDisplayTitle(sanitizeTitle(fileName.replace(/\.(md|txt)$/, "")));
         setCurrentFile(null, droppedContent);
         isLoadingRef.current = false;
       } catch (e) {
         console.error("[Float] file drop failed:", e);
-        toast("拖入失败");
+        toast(tr("ui.couldNotImportTheFile"));
       } finally {
         setBusy(false);
       }
     },
     onError: (message) => toast(message),
     onUnsupportedFile: () => {
-      toast(`仅支持 .md 和 .txt 文件`);
+      toast(tr("images.supportedDrops"));
     },
   });
-
-  // ── Toast ──────────────────────────────────────────────────
-  const [toastMsg, setToastMsg] = useState("");
-  const [toastKey, setToastKey] = useState(0);
-  const toast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    setToastKey((k) => k + 1);
-  }, []);
 
   // ── Title editing ──────────────────────────────────────────
   const startEditTitle = useCallback(() => {
@@ -293,7 +327,8 @@ function FloatWindow() {
   const confirmTitle = useCallback(() => {
     const input = titleInputRef.current?.value ?? "";
     const cleaned = sanitizeTitle(input);
-    setDisplayTitle(cleaned || DEFAULT_TITLE);
+    titleIsAutomatic.current = !cleaned;
+    setDisplayTitle(cleaned || defaultTitle());
     setIsEditingTitle(false);
   }, []);
 
@@ -304,10 +339,11 @@ function FloatWindow() {
 
   // ── Archive ────────────────────────────────────────────────
   const handleArchive = useCallback(async () => {
+    await waitForImages();
     if (transactionRef.current) return;
     const content = contentRef.current;
     if (!content || !content.trim()) {
-      toast("没有内容可归档");
+      toast(tr("ui.thereIsNothingToArchive"));
       return;
     }
 
@@ -318,14 +354,14 @@ function FloatWindow() {
 
       // 2. Determine filename
       let fileName: string;
-      if (displayTitle === DEFAULT_TITLE || !displayTitle.trim()) {
+      if (displayTitle === defaultTitle() || !displayTitle.trim()) {
         // Default title → suggest date-based name, let user confirm/change
         const dateName = getDailyFileName().replace(/\.md$/, "");
         const result = await openInputModal({
-          title: "归档便利贴",
-          label: "文件名",
+          title: tr("ui.archiveNote"),
+          label: tr("ui.fileName"),
           defaultValue: dateName,
-          confirmText: "归档",
+          confirmText: tr("ui.archive"),
         });
         if (!result) return; // user cancelled
         fileName = sanitizeTitle(result) + ".md";
@@ -343,13 +379,15 @@ function FloatWindow() {
 
       // 5. Toast if renamed
       if (finalName !== fileName) {
-        toast(`已归档（重名改为 ${finalName}）`);
+        toast(tr("ui.archivedAsToAvoidANameConflict", { v0: finalName }));
       }
 
       // 6. Reset float to clean state
+      contentRevision.current++;
       contentRef.current = "";
       setContentState("");
-      setDisplayTitle(DEFAULT_TITLE);
+      titleIsAutomatic.current = true;
+      setDisplayTitle(defaultTitle());
       resetAutoSave();
       setMode("buffer");
     } catch (err) {
@@ -362,14 +400,15 @@ function FloatWindow() {
 
   // ── Clear (discard buffer) ─────────────────────────────────
   const handleClear = useCallback(async () => {
+    await waitForImages();
     if (transactionRef.current) return;
     if (!contentRef.current.trim()) return;
     const decision = await openConfirmDialog({
-      title: "清空当前草稿？",
-      message: "先归档可以保留这份想法。",
+      title: tr("ui.clearThisDraft"),
+      message: tr("ui.archiveItFirstToKeepThisThought"),
       buttons: [
-        { text: "清空", value: "clear", primary: true },
-        { text: "取消", value: "cancel" },
+        { text: tr("ui.clear"), value: "clear", primary: true },
+        { text: tr("ui.cancel"), value: "cancel" },
       ],
     });
     if (decision !== "clear") return;
@@ -378,9 +417,11 @@ function FloatWindow() {
       await saveNow();
       await waitForIdle();
       await clearBuffer();
+      contentRevision.current++;
       contentRef.current = "";
       setContentState("");
-      setDisplayTitle(DEFAULT_TITLE);
+      titleIsAutomatic.current = true;
+      setDisplayTitle(defaultTitle());
       resetAutoSave();
       setMode("buffer");
     } catch (err) {
@@ -396,6 +437,7 @@ function FloatWindow() {
     isLoadingRef,
     saveNow,
     setContent: (text) => {
+      contentRevision.current++;
       contentRef.current = text;
       setContentState(text);
     },
@@ -404,8 +446,9 @@ function FloatWindow() {
     isBusy: () => transactionRef.current || restoring || !!restoreError,
     setBusy,
     onReceive: (fileName, incoming) => {
+      titleIsAutomatic.current = false;
       setDisplayTitle(
-        sanitizeTitle(fileName.replace(/\.md$/, "")) || DEFAULT_TITLE,
+        sanitizeTitle(fileName.replace(/\.md$/, "")) || defaultTitle(),
       );
       setCurrentFile(null, incoming);
     },
@@ -441,7 +484,7 @@ function FloatWindow() {
     try {
       const mainWin = await WebviewWindow.getByLabel("main");
       if (!mainWin) {
-        toast("主窗口未打开");
+        toast(tr("ui.theLibraryWindowIsNotAvailable"));
         return;
       }
       await mainWin.unminimize().catch(() => {});
@@ -455,6 +498,7 @@ function FloatWindow() {
   useWindowLifecycle(
     "float",
     async () => {
+      await waitForImages();
       await waitTransaction();
       if (isDirty()) await saveNow(true);
       else await waitForIdle();
@@ -463,6 +507,7 @@ function FloatWindow() {
   );
   const hideSafely = async () => {
     try {
+      await waitForImages();
       await waitTransaction();
       await saveNow();
       await getCurrentWindow().hide();
@@ -491,7 +536,9 @@ function FloatWindow() {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        saveNow(true).catch(() => {});
+        waitForImages()
+          .then(() => saveNow(true))
+          .catch(() => {});
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
         e.preventDefault();
@@ -524,7 +571,7 @@ function FloatWindow() {
           <span
             className="float-title"
             onClick={startEditTitle}
-            title="点击编辑标题"
+            title={tr("ui.clickToEditTheTitle")}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -542,13 +589,13 @@ function FloatWindow() {
             className={`mode-btn${viewMode === "code" ? " active" : ""}`}
             onClick={() => setViewMode("code")}
           >
-            编辑
+            {tr("ui.edit")}
           </button>
           <button
             className={`mode-btn${viewMode === "preview" ? " active" : ""}`}
             onClick={() => setViewMode("preview")}
           >
-            预览
+            {tr("ui.preview")}
           </button>
         </div>
         <span className="float-toolbar-actions">
@@ -556,7 +603,7 @@ function FloatWindow() {
             className="swap-btn"
             onClick={handleClear}
             disabled={transaction || !content || !content.trim()}
-            title="清空"
+            title={tr("ui.clear")}
           >
             <IconTrash />
           </button>
@@ -564,15 +611,15 @@ function FloatWindow() {
             className="swap-btn"
             onClick={handleArchive}
             disabled={!content || !content.trim()}
-            title="归档"
-            aria-label="归档"
+            title={tr("ui.archive")}
+            aria-label={tr("ui.archive")}
           >
             <IconArchive />
           </button>
           <button
             className="swap-btn"
             onClick={handleShowMain}
-            title="打开主窗"
+            title={tr("ui.openLibrary")}
           >
             <IconMaximize />
           </button>
@@ -605,23 +652,21 @@ function FloatWindow() {
               <div className="float-watermark" aria-hidden="true">
                 {wmData.kind === "tutorial" ? (
                   <>
-                    <p>在此写下闪念</p>
+                    <p>{tr("ui.captureAThoughtHere")}</p>
                     <p>
-                      <code>Alt+Q</code> 呼出 / 隐藏浮窗
+                      {tr("float.shortcutHint", { shortcut: currentShortcut })}
                     </p>
                     <p>
                       <span className="wm-icon">
                         <IconMaximize />
                       </span>{" "}
-                      打开主窗（便利贴档案）
+                      {tr("ui.openYourLibrary")}
                     </p>
-                    <p>
-                      拖入 <code>.md</code> 文件到此处编辑
-                    </p>
-                    <p>点击标题可编辑，归档时以此命名</p>
+                    <p>{tr("float.dropFileHint")}</p>
+                    <p>{tr("ui.clickTheTitleToChangeItsArchiveName")}</p>
                   </>
                 ) : (
-                  <p>{wmData.text}</p>
+                  <p>{displayMessage(wmData.text)}</p>
                 )}
               </div>
             )}

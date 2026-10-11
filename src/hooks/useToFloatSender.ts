@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { useCallback } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -22,24 +23,31 @@ export function useToFloatSender({
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         if ((window as any).__QUICKMD_BROWSER__)
-          throw Error("双窗转移请在桌面版中体验；浏览器预览不连接本地档案");
+          throw Error(
+            tr("ui.tryTransfersInTheDesktopAppBrowserPreviewsCannot"),
+          );
         const isCurrent = !targetName || targetName === getCurrentFile();
         if (isCurrent) await saveNow();
         const fileName = targetName || getCurrentFile();
-        if (!fileName) throw Error("请先保存便利贴");
+        if (!fileName) throw Error(tr("ui.saveTheNoteFirst"));
         const content = isCurrent
           ? contentRef.current
           : await loadNote(fileName);
-        if (!content.trim()) throw Error("该便利贴没有内容");
+        if (!content.trim()) throw Error(tr("ui.thisNoteIsEmpty"));
         const w = await WebviewWindow.getByLabel("float");
-        if (!w) throw Error("浮窗尚未就绪");
+        if (!w) throw Error(tr("ui.theScratchpadIsNotReady"));
         await w.unminimize();
         await w.show();
         await w.setFocus();
         const requestId = crypto.randomUUID();
         const completion = new Promise<void>(async (resolve, reject) => {
           timer = setTimeout(
-            () => reject(Error("浮窗未确认接收，原便利贴已保留，请稍后重试")),
+            () =>
+              reject(
+                Error(
+                  tr("ui.theScratchpadDidNotConfirmReceiptTheOriginalNote"),
+                ),
+              ),
             8000,
           );
           try {
@@ -51,7 +59,11 @@ export function useToFloatSender({
               if (e.payload.requestId === requestId)
                 e.payload.ok
                   ? resolve()
-                  : reject(Error(e.payload.error || "移入浮窗失败"));
+                  : reject(
+                      Error(
+                        e.payload.error || tr("ui.couldNotCopyToScratchpad"),
+                      ),
+                    );
             });
             const payload: ToFloatPayload = { requestId, content, fileName };
             await emit(EVENT_TO_FLOAT, payload);

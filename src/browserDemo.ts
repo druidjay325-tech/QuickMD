@@ -6,7 +6,22 @@ import {
 } from "@tauri-apps/api/mocks";
 import welcome from "../WELCOME_CONTENT.md?raw";
 import guide from "../MD_GUIDE_CONTENT.md?raw";
+import welcomeEn from "../WELCOME_CONTENT.en.md?raw";
+import guideEn from "../MD_GUIDE_CONTENT.en.md?raw";
+import { resolveLocale, tr } from "./i18n";
+import type { LanguagePreference } from "./commands";
+import englishMessages from "./locales/en.json";
+import legacyMessages from "./locales/legacy.json";
 export function startBrowserDemo() {
+  const savedLanguage = localStorage.getItem("quickmd-language");
+  let preference: LanguagePreference =
+    savedLanguage === "zh-CN" || savedLanguage === "en"
+      ? savedLanguage
+      : "system";
+  let revision = 0;
+  const currentLocale = () =>
+    preference === "system" ? resolveLocale(navigator.language) : preference;
+  const english = currentLocale() === "en";
   (window as any).__QUICKMD_BROWSER__ = true;
   document.documentElement.dataset.preview = "true";
   mockWindows(
@@ -18,8 +33,11 @@ export function startBrowserDemo() {
   );
   mockConvertFileSrc("windows");
   const notes = new Map<string, string>([
-    ["SOUL.md", welcome],
-    ["Markdown 语法指南.md", guide],
+    ["SOUL.md", english ? welcomeEn : welcome],
+    [
+      english ? "Markdown Guide.md" : "Markdown 语法指南.md",
+      english ? guideEn : guide,
+    ],
     [
       "让想法有个落点.md",
       "# 让想法有个落点\n\n不必等一个完整的计划。先记下一句话，再慢慢让它生长。\n\n## 今天的闪念\n\n- [ ] 写下一个值得追逐的想法\n- [ ] 留一点时间给自己\n- [x] 把注意力带回眼前\n\n> 简单，安静，始终在手边。\n",
@@ -38,6 +56,23 @@ export function startBrowserDemo() {
     "让想法有个落点.md": ["日常"],
     "关于下一个作品.md": ["灵感"],
   };
+  if (english) {
+    const translateSample = (text: string) => {
+      const key = (legacyMessages as Record<string, string>)[text.trim()];
+      return key ? (englishMessages as Record<string, string>)[key] : text;
+    };
+    for (const [name, content] of [...notes]) {
+      const translatedName = translateSample(name);
+      if (translatedName !== name) {
+        notes.delete(name);
+        notes.set(translatedName, translateSample(content));
+      }
+    }
+    for (const [name, values] of Object.entries(tags)) {
+      delete tags[name];
+      tags[translateSample(name)] = values.map(translateSample);
+    }
+  }
   const create = (name: string, text: string) => {
     let candidate = name;
     for (let i = 1; notes.has(candidate); i++)
@@ -55,6 +90,23 @@ export function startBrowserDemo() {
   mockIPC(
     (cmd, args: any) => {
       switch (cmd) {
+        case "check_version_update":
+          return {
+            status: "browser-preview",
+            currentVersion: "",
+            latestVersion: null,
+            releaseUrl: null,
+          };
+        case "open_project_link":
+          window.open(args.url, "_blank", "noopener,noreferrer");
+          return;
+        case "get_locale":
+          return { preference, locale: currentLocale(), revision };
+        case "set_locale":
+          preference = args.locale;
+          localStorage.setItem("quickmd-language", preference);
+          revision++;
+          return { preference, locale: currentLocale(), revision };
         case "set_window_glass":
           return {
             engine: "browser-preview",
@@ -145,7 +197,7 @@ export function startBrowserDemo() {
         case "plugin:dialog|open":
           return null;
         case "resolve_image":
-          throw Error("浏览器预览不读取本地图片");
+          throw Error(tr("ui.browserPreviewsCannotReadLocalImages"));
         case "search_notes":
           return list().filter(
             (n) =>

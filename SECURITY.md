@@ -1,7 +1,7 @@
-# 安全策略
+# Security policy
 
-当前维护版本为 0.6.x。预览默认不执行原始 HTML或加载远程图片，原生命令校验档案名称与图片类型。请使用来源明确的源码或候选包，并核对对应 SHA-256；本地候选包的签名状态会在发行记录中注明。
+The maintained version is 0.7.x. Markdown previews do not execute raw HTML or automatically load remote images. Native commands validate note names and image formats. Use trusted source code and installers; check the release's SHA-256 and signature status.
 
-发布到 GitHub 后，优先通过仓库 Security → Report a vulnerability 私下报告。若该入口尚未启用，先提交不含利用细节和私密数据的 Issue，请维护者提供私密渠道；不要公开真实文件、账号信息或可直接利用的载荷。
+Prefer the repository's Security → Report a vulnerability feature when enabled. Otherwise, open an issue without exploit details or private data and ask the maintainer for a private channel.
 
-请提供版本、系统、可丢弃样例与复现步骤。所有安全验证在隔离目录进行。npm 审计、RustSec 审计和依赖锁反映检查时的公告库状态，不是永久安全保证。
+Include the version, operating system, a disposable sample and reproduction steps. Perform all security testing in isolated profiles. Dependency audits describe the advisory databases at the time of checking, not a permanent security guarantee.

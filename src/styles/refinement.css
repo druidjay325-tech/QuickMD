@@ -261,7 +261,7 @@ button[aria-pressed="true"] {
   background: var(--bg-secondary);
 }
 .settings-modal {
-  width: min(440px, calc(100vw - 32px));
+  width: min(480px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
 }
 .settings-header {

@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../i18n";
 import {
   createContext,
   useContext,
@@ -13,6 +14,7 @@ import {
   type MaterialStatus,
 } from "../commands";
 import { EVENT_GLASS_OPACITY_CHANGED, EVENT_ACCENT_CHANGED } from "../events";
+import { migrateAccent } from "../utils/accent";
 
 export type Theme = "dark" | "light" | "glass";
 export const DEFAULT_THEME: Theme = "glass";
@@ -20,9 +22,15 @@ export const DEFAULT_GLASS_OPACITY = 22;
 const GLASS_OPACITY_KEY = "quickmd-glass-opacity";
 export const THEMES: readonly Theme[] = ["dark", "light", "glass"];
 export const THEME_LABELS: Record<Theme, string> = {
-  dark: "深色",
-  light: "浅色",
-  glass: "毛玻璃",
+  get dark() {
+    return tr("ui.dark");
+  },
+  get light() {
+    return tr("ui.light");
+  },
+  get glass() {
+    return tr("ui.glass");
+  },
 };
 export function isTheme(value: unknown): value is Theme {
   return THEMES.includes(value as Theme);
@@ -51,7 +59,7 @@ function readAccent(): string {
       localStorage.getItem("quickmd-accent-color") || "null",
     )?.accent;
     if (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value))
-      return value;
+      return migrateAccent(value, "").accent;
   } catch {}
   return "#527ac7";
 }
@@ -75,6 +83,8 @@ function readTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  useLocale();
+
   const [theme, setThemeState] = useState<Theme>(readTheme);
   const [glassOpacity, setGlassOpacityState] = useState(readGlassOpacity);
   const [accent, setAccent] = useState(readAccent);
@@ -90,7 +100,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         typeof event.payload.accent === "string" &&
         /^#[0-9a-f]{6}$/i.test(event.payload.accent)
       )
-        setAccent(event.payload.accent);
+        setAccent(migrateAccent(event.payload.accent, "").accent);
     })
       .then((fn) => {
         if (disposed) fn();
@@ -126,7 +136,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setMaterialError(
           status.state === 0
             ? null
-            : "系统策略正在使用实色替代材质，调节值已保留。",
+            : tr("ui.windowsIsUsingASolidFallbackYourMaterialSettings"),
         );
       } catch {
       } finally {
@@ -204,7 +214,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           setMaterialStatus(status ?? null);
           setMaterialError(
             native && status.state !== 0
-              ? "系统策略正在使用实色替代材质，调节值已保留。"
+              ? tr("ui.windowsIsUsingASolidFallbackYourMaterialSettings")
               : null,
           );
         } catch (error) {

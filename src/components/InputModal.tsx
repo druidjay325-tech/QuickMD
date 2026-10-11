@@ -1,3 +1,4 @@
+import { tr, useLocale, displayMessage } from "../i18n";
 /**
  * Promise-based input modal — replaces browser prompt() with a styled component.
  * Usage: const result = await openInputModal({ title, defaultValue, label });
@@ -46,9 +47,11 @@ function InputModalInner({
   label,
   defaultValue = "",
   placeholder,
-  confirmText = "确定",
+  confirmText = tr("ui.ok"),
   onClose,
 }: InputModalOptions & { onClose: (result: string | null) => void }) {
+  useLocale();
+
   const [value, setValue] = useState(defaultValue);
   const inputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -70,15 +73,17 @@ function InputModalInner({
         ref={cardRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={displayMessage(title)}
         className="input-modal-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="input-modal-title">{title}</h3>
-        {label && <label className="input-modal-label">{label}</label>}
+        <h3 className="input-modal-title">{displayMessage(title)}</h3>
+        {label && (
+          <label className="input-modal-label">{displayMessage(label)}</label>
+        )}
         <input
           ref={inputRef}
-          aria-label={label || title}
+          aria-label={displayMessage(label || title)}
           className="input-modal-field"
           type="text"
           value={value}
@@ -94,13 +99,13 @@ function InputModalInner({
             className="input-modal-btn input-modal-cancel"
             onClick={() => onClose(null)}
           >
-            取消
+            {tr("ui.cancel")}
           </button>
           <button
             className="input-modal-btn input-modal-confirm"
             onClick={handleConfirm}
           >
-            {confirmText}
+            {displayMessage(confirmText)}
           </button>
         </div>
       </div>

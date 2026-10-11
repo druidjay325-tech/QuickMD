@@ -1,3 +1,4 @@
+import { tr } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { saveNote, saveBuffer, createNote } from "../commands";
 import { getTimestampFileName } from "../utils/wordCount";
@@ -64,7 +65,7 @@ export function useAutoSave({
         generation = session.current.currentGeneration();
       await session.current.enqueue(async () => {
         if (generation !== session.current.currentGeneration())
-          throw new Error("文档已切换，请保存当前内容");
+          throw new Error(tr("ui.theDocumentChangedSaveYourCurrentContent"));
         if (!force && text === baseline.current) {
           if (contentFn.current() === text) {
             dirty.current = false;

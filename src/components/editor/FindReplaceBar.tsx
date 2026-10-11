@@ -1,3 +1,4 @@
+import { tr, useLocale } from "../../i18n";
 import { useState, useCallback, useRef, useEffect } from "react";
 import "./FindReplaceBar.css";
 
@@ -35,6 +36,8 @@ export function FindReplaceBar({
   previewMode = false,
   onClose,
 }: FindReplaceBarProps) {
+  useLocale();
+
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -192,7 +195,7 @@ export function FindReplaceBar({
     const matches = matchesRef.current;
     if (matches.length === 0) return;
     const confirmed = window.confirm(
-      `将替换当前便利贴中的 ${matches.length} 处内容，确定？`,
+      tr("ui.replaceMatchesInThisNote", { v0: matches.length }),
     );
     if (!confirmed) return;
     const c = getContentRef.current();
@@ -234,7 +237,7 @@ export function FindReplaceBar({
           <button
             className="fr-expand-btn"
             onClick={() => setShowReplace(!showReplace)}
-            title={showReplace ? "收起替换" : "展开替换"}
+            title={showReplace ? tr("ui.hideReplace") : tr("ui.showReplace")}
           >
             {showReplace ? "▾" : "▸"}
           </button>
@@ -244,14 +247,14 @@ export function FindReplaceBar({
           ref={findRef}
           className="fr-input"
           type="text"
-          placeholder="查找"
+          placeholder={tr("ui.find")}
           value={findText}
           onChange={(e) => handleFindChange(e.target.value)}
         />
         <button
           className={`fr-chip${caseSensitive ? " active" : ""}`}
           onClick={toggleCaseSensitive}
-          title="区分大小写"
+          title={tr("ui.matchCase")}
         >
           Aa
         </button>
@@ -262,7 +265,7 @@ export function FindReplaceBar({
           className="fr-icon-btn"
           onClick={goPrev}
           disabled={matchCount === 0}
-          title="上一个 (Shift+Enter)"
+          title={tr("ui.previousShiftEnter")}
         >
           <svg
             width="14"
@@ -279,7 +282,7 @@ export function FindReplaceBar({
           className="fr-icon-btn"
           onClick={goNext}
           disabled={matchCount === 0}
-          title="下一个 (Enter)"
+          title={tr("ui.nextEnter")}
         >
           <svg
             width="14"
@@ -295,7 +298,7 @@ export function FindReplaceBar({
         <button
           className="fr-icon-btn fr-close"
           onClick={onClose}
-          title="关闭 (Esc)"
+          title={tr("ui.closeEsc")}
         >
           ×
         </button>
@@ -306,7 +309,7 @@ export function FindReplaceBar({
           <input
             className="fr-input"
             type="text"
-            placeholder="替换为"
+            placeholder={tr("ui.replaceWith")}
             value={replaceText}
             onChange={(e) => setReplaceText(e.target.value)}
           />
@@ -314,17 +317,17 @@ export function FindReplaceBar({
             className="fr-chip"
             onClick={replaceCurrent}
             disabled={currentIdx < 0}
-            title="替换当前"
+            title={tr("ui.replaceCurrentMatch")}
           >
-            替换
+            {tr("ui.replace")}
           </button>
           <button
             className="fr-chip fr-chip-primary"
             onClick={replaceAll}
             disabled={matchCount === 0}
-            title="全部替换"
+            title={tr("ui.replaceAll")}
           >
-            全部替换
+            {tr("ui.replaceAll")}
           </button>
         </div>
       )}

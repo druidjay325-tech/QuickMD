@@ -1,0 +1,274 @@
+[
+  {
+    "prefix": "当前系统不支持 DesktopAcrylicController",
+    "code": "errors.thisSystemDoesNotSupportDesktopacryliccontroller"
+  },
+  {
+    "prefix": "DesktopAcrylicController 无法启用",
+    "code": "errors.desktopacryliccontrollerIsUnavailableWindowsAppRuntime251X64"
+  },
+  {
+    "prefix": "QuickMD 已在运行，请使用全局快捷键或托盘呼出",
+    "code": "errors.quickmdIsAlreadyRunningUseTheGlobalShortcutOrTray"
+  },
+  {
+    "prefix": "磁盘内容已被外部修改，当前稿保留；请先导出或确认冲突",
+    "code": "errors.theFileChangedOutsideQuickmdYourDraftIsSafeExport"
+  },
+  {
+    "prefix": "请选择 PNG、JPEG、GIF 或 WebP 图片",
+    "code": "errors.chooseAPngJpegGifOrWebpImage"
+  },
+  {
+    "prefix": "系统未确认文件已进入回收站，请检查源文件和系统回收站",
+    "code": "errors.windowsDidNotConfirmRecyclingCheckTheOriginalFileAnd"
+  },
+  {
+    "prefix": "请使用有效的便利贴名称，不要包含路径或系统保留名称",
+    "code": "errors.chooseAValidNoteNameWithoutPathsOrReservedSystem"
+  },
+  {
+    "prefix": "当前版本仅支持 Windows 系统回收站删除",
+    "code": "errors.recycleBinDeletionIsOnlySupportedOnWindows"
+  },
+  {
+    "prefix": "系统回收站操作线程异常，请检查文件和系统回收站",
+    "code": "errors.theRecycleBinOperationThreadFailedCheckTheFileAnd"
+  },
+  {
+    "prefix": "该网络或特殊位置不支持系统回收站删除，文件保留",
+    "code": "errors.thisNetworkOrSpecialLocationDoesNotSupportTheRecycle"
+  },
+  {
+    "prefix": "目标目录存在不同内容的同名图片，原目录已保留",
+    "code": "errors.theDestinationContainsAnImageWithDifferentContentUnderThe"
+  },
+  {
+    "prefix": "系统回收站操作未完成，原文件未执行永久删除",
+    "code": "errors.theRecycleBinOperationDidNotFinishNoPermanentDeletion"
+  },
+  {
+    "prefix": "只支持拖入 Markdown 或文本文件",
+    "code": "errors.onlyMarkdownAndTextFilesCanBeImported"
+  },
+  {
+    "prefix": "只允许将有效的便利贴文件移入系统回收站",
+    "code": "errors.onlyValidNoteFilesCanBeMovedToTheRecycle"
+  },
+  {
+    "prefix": "网络位置不支持系统回收站删除，文件保留",
+    "code": "errors.networkLocationsDoNotSupportTheRecycleBinTheFile"
+  },
+  {
+    "prefix": "毛玻璃不透明度应在 0–100% 之间",
+    "code": "errors.glassOpacityMustBeBetween0And100Percent"
+  },
+  {
+    "prefix": "文件仍在原目录，系统回收站操作未完成",
+    "code": "errors.theFileRemainsInItsOriginalFolderRecyclingDidNot"
+  },
+  {
+    "prefix": "配置损坏，请恢复备份；原文件未改动",
+    "code": "errors.theSettingsFileIsDamagedRestoreABackupTheOriginal"
+  },
+  {
+    "prefix": "文件超过 8 MB，请分段导入",
+    "code": "errors.thisFileExceeds8MbImportItInSmallerSections"
+  },
+  {
+    "prefix": "草稿文件被外部修改，当前稿保留",
+    "code": "errors.theDraftFileChangedOutsideQuickmdYourCurrentDraftIs"
+  },
+  {
+    "prefix": "图片目录包含非文件项，请先检查",
+    "code": "errors.theImageFolderContainsNonFileItemsCheckItFirst"
+  },
+  {
+    "prefix": "存储操作未完成，请重启后恢复",
+    "code": "errors.theStorageOperationDidNotFinishRestartQuickmdToRecover"
+  },
+  {
+    "prefix": "同名便利贴过多，请换一个名称",
+    "code": "errors.tooManyNotesShareThisNameChooseAnotherName"
+  },
+  {
+    "prefix": "快捷键不可用，原快捷键已保留",
+    "code": "errors.thisShortcutIsUnavailableThePreviousShortcutIsRetained"
+  },
+  {
+    "prefix": "隔离数据目录必须为绝对路径",
+    "code": "errors.theIsolatedDataDirectoryMustBeAnAbsolutePath2"
+  },
+  {
+    "prefix": "文件名必须以 .md 结尾",
+    "code": "errors.fileNamesMustEndInMd"
+  },
+  {
+    "prefix": "不允许通过链接访问档案文件",
+    "code": "errors.notesCannotBeAccessedThroughSymbolicLinks"
+  },
+  {
+    "prefix": "数据文件损坏，原文件未改动",
+    "code": "errors.theDataFileIsDamagedTheOriginalFileIsUnchanged"
+  },
+  {
+    "prefix": "初始文档目录必须是绝对路径",
+    "code": "errors.theInitialDocumentDirectoryMustBeAnAbsolutePath"
+  },
+  {
+    "prefix": "材质操作必须在窗口线程执行",
+    "code": "errors.materialOperationsMustRunOnTheWindowThread"
+  },
+  {
+    "prefix": "实际材质回读与请求值不一致",
+    "code": "errors.materialReadbackDoesNotMatchTheRequestedValues"
+  },
+  {
+    "prefix": "网络共享图片不会自动加载",
+    "code": "errors.imagesFromNetworkSharesDoNotLoadAutomatically"
+  },
+  {
+    "prefix": "毛玻璃请求未完成，请重试",
+    "code": "errors.theGlassRequestDidNotFinishTryAgain"
+  },
+  {
+    "prefix": "新旧存档目录不能互相包含",
+    "code": "errors.theOldAndNewArchiveFoldersCannotContainOneAnother"
+  },
+  {
+    "prefix": "系统未返回回收站操作结果",
+    "code": "errors.windowsDidNotReturnARecycleBinResult"
+  },
+  {
+    "prefix": "隔离目录必须为绝对路径",
+    "code": "errors.theIsolatedDataDirectoryMustBeAnAbsolutePath"
+  },
+  {
+    "prefix": "此窗口不支持毛玻璃主题",
+    "code": "errors.thisWindowDoesNotSupportTheGlassTheme"
+  },
+  {
+    "prefix": "写入失败，原内容已保留",
+    "code": "errors.couldNotWriteTheFileTheOriginalContentIsPreserved"
+  },
+  {
+    "prefix": "设置回收站操作选项失败",
+    "code": "errors.couldNotConfigureTheRecycleBinOperation"
+  },
+  {
+    "prefix": "可调毛玻璃组件加载失败",
+    "code": "errors.couldNotLoadTheAdjustableGlassComponent"
+  },
+  {
+    "prefix": "材质参数回读失败：0x",
+    "code": "errors.couldNotReadMaterialParameters"
+  },
+  {
+    "prefix": "无法定位用户数据目录",
+    "code": "errors.couldNotLocateTheUserDataDirectory"
+  },
+  {
+    "prefix": "请选择完整的目录路径",
+    "code": "errors.chooseAnAbsoluteDirectoryPath"
+  },
+  {
+    "prefix": "图片超过 16 MB",
+    "code": "errors.thisImageExceeds16Mb"
+  },
+  {
+    "prefix": "此窗口不支持材质回读",
+    "code": "errors.thisWindowDoesNotSupportMaterialReadback"
+  },
+  {
+    "prefix": "创建系统删除操作失败",
+    "code": "errors.couldNotCreateTheSystemDeletionOperation"
+  },
+  {
+    "prefix": "可调毛玻璃接口不完整",
+    "code": "errors.theAdjustableGlassInterfaceIsIncomplete"
+  },
+  {
+    "prefix": "材质回读没有结束标记",
+    "code": "errors.materialReadbackIsMissingItsTerminator"
+  },
+  {
+    "prefix": "识别待删除文件失败",
+    "code": "errors.couldNotIdentifyTheFileToDelete"
+  },
+  {
+    "prefix": "提交回收站操作失败",
+    "code": "errors.couldNotSubmitTheRecycleBinOperation"
+  },
+  {
+    "prefix": "执行回收站操作失败",
+    "code": "errors.couldNotRunTheRecycleBinOperation"
+  },
+  {
+    "prefix": "无法移入系统回收站",
+    "code": "errors.couldNotMoveTheFileToTheRecycleBin"
+  },
+  {
+    "prefix": "材质更新失败：0x",
+    "code": "errors.couldNotUpdateTheMaterial"
+  },
+  {
+    "prefix": "NOT_FOUND",
+    "code": "errors.notFound"
+  },
+  {
+    "prefix": "不支持此图片格式",
+    "code": "errors.thisImageFormatIsNotSupported"
+  },
+  {
+    "prefix": "不支持此链接协议",
+    "code": "errors.thisLinkProtocolIsNotSupported"
+  },
+  {
+    "prefix": "创建初始文档失败",
+    "code": "errors.couldNotCreateTheInitialDocuments"
+  },
+  {
+    "prefix": "无法定位配置目录",
+    "code": "errors.couldNotLocateTheSettingsDirectory"
+  },
+  {
+    "prefix": "回收站结果不可用",
+    "code": "errors.theRecycleBinResultIsUnavailable"
+  },
+  {
+    "prefix": "不支持此界面语言",
+    "code": "errors.thisInterfaceLanguageIsNotSupported"
+  },
+  {
+    "prefix": "材质回读未完成",
+    "code": "errors.materialReadbackDidNotFinish"
+  },
+  {
+    "prefix": "目标名称已存在",
+    "code": "errors.thatNameAlreadyExists"
+  },
+  {
+    "prefix": "自启动设置失败",
+    "code": "errors.couldNotChangeLaunchAtSignInSettings"
+  },
+  {
+    "prefix": "主题色格式无效",
+    "code": "errors.theAccentColorFormatIsInvalid"
+  },
+  {
+    "prefix": "材质组件未就绪",
+    "code": "errors.theMaterialComponentIsNotReady"
+  },
+  {
+    "prefix": "文件路径无效",
+    "code": "errors.theFilePathIsInvalid"
+  },
+  {
+    "prefix": "文件不存在",
+    "code": "errors.theFileDoesNotExist"
+  },
+  {
+    "prefix": "浮窗未就绪",
+    "code": "errors.theScratchpadIsNotReady"
+  }
+]

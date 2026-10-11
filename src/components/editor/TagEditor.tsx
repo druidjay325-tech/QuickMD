@@ -1,3 +1,4 @@
+import { tr, useLocale, displayMessage } from "../../i18n";
 import { useState, useCallback, useRef } from "react";
 import { useModalFocus } from "../useModalFocus";
 import { setTags } from "../../commands";
@@ -16,6 +17,8 @@ export function TagEditor({
   onClose,
   onTagsChanged,
 }: TagEditorProps) {
+  useLocale();
+
   const [tags, setTagsState] = useState<string[]>(initialTags);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -84,13 +87,18 @@ export function TagEditor({
         ref={card}
         role="dialog"
         aria-modal="true"
-        aria-label="标签管理"
+        aria-label={tr("ui.manageTags")}
         className="tag-editor"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="tag-editor-header">
-          标签管理
-          <button className="tag-editor-close" onClick={onClose} title="关闭">
+          {tr("ui.manageTags")}
+          <button
+            className="tag-editor-close"
+            onClick={onClose}
+            title={tr("ui.close")}
+            aria-label={tr("ui.close")}
+          >
             ×
           </button>
         </div>
@@ -107,25 +115,25 @@ export function TagEditor({
             </span>
           ))}
           {tags.length === 0 && (
-            <span className="tag-editor-empty">暂无标签</span>
+            <span className="tag-editor-empty">{tr("ui.noTagsYet")}</span>
           )}
         </div>
         <div className="tag-editor-input-row">
           <input
             className="tag-editor-input"
-            placeholder="输入标签名，回车添加..."
+            placeholder={tr("ui.enterATagAndPressEnter")}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             autoFocus
           />
           <button className="tag-editor-add" onClick={addTag}>
-            添加
+            {tr("ui.add")}
           </button>
         </div>
         {error && (
           <p className="settings-error" role="alert">
-            {error}
+            {displayMessage(error)}
           </p>
         )}
       </div>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">QuickMD · 闪念便利贴</title>
+  <desc id="desc">想到什么，Alt+Q 一下，先记下来。Windows 本地 Markdown 便利贴，MIT 开源。</desc>
+  <defs>
+    <linearGradient id="key-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c3d56"/>
+      <stop offset="1" stop-color="#1b293c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="#101720"/>
+  <rect x="24" y="24" width="1232" height="592" rx="28" fill="none" stroke="#29384d"/>
+  <path d="M76 196H1204" stroke="#29384d"/>
+  <path d="M76 196H236" stroke="#527ac7" stroke-width="4"/>
+  <image id="project-icon" href="../../src-tauri/icons/128x128.png" x="76" y="72" width="88" height="88"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="188" y="142" fill="#f5f7fb" font-size="80" font-weight="700" letter-spacing="-2">QuickMD</text>
+    <text x="76" y="415" fill="#aebdd1" font-size="29">Local Markdown scratchpad</text>
+  </g>
+  <g font-family="Microsoft YaHei, PingFang SC, sans-serif">
+    <text x="76" y="292" fill="#f5f7fb" font-size="61" font-weight="700" letter-spacing="2">闪念便利贴</text>
+    <text x="76" y="358" fill="#dbe3f0" font-size="34">想到什么，Alt+Q 一下，先记下来。</text>
+    <text x="76" y="557" fill="#aebdd1" font-size="26">Windows · 本地 Markdown · MIT 开源</text>
+  </g>
+  <!-- 键帽是快捷键的图形表达，不是产品界面。 -->
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle">
+    <rect x="899" y="278" width="152" height="120" rx="21" fill="#080d15"/>
+    <rect x="899" y="264" width="152" height="120" rx="21" fill="url(#key-face)" stroke="#627fa7" stroke-width="2"/>
+    <path d="M920 278H1030" stroke="#92b4e7" stroke-opacity=".45" stroke-width="2"/>
+    <text x="975" y="341" fill="#eaf1ff" font-size="53" font-weight="600">Alt</text>
+    <text x="1080" y="339" fill="#90a9ca" font-size="40" font-weight="300">+</text>
+    <rect x="1110" y="278" width="94" height="120" rx="21" fill="#080d15"/>
+    <rect x="1110" y="264" width="94" height="120" rx="21" fill="#527ac7" stroke="#8aaceb" stroke-width="2"/>
+    <path d="M1129 278H1185" stroke="#c5d8ff" stroke-opacity=".5" stroke-width="2"/>
+    <text x="1157" y="341" fill="#ffffff" font-size="54" font-weight="600">Q</text>
+  </g>
+  <path d="M899 427H1204" stroke="#334a6b"/>
+  <circle cx="1204" cy="427" r="4" fill="#527ac7"/>
+  <path d="M1204 523V557H1170" fill="none" stroke="#527ac7" stroke-width="4" stroke-linecap="round"/>
+</svg>
